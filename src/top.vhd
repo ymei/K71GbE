@@ -1048,15 +1048,11 @@ BEGIN
 
     -- send control_fifo data through gig_eth_tx_fifo
     gig_eth_tx_fifo_wrclk <= clk_125MHz;
+    -- connect FWFT fifo interface
     control_fifo_rdclk    <= gig_eth_tx_fifo_wrclk;
-    PROCESS (control_fifo_rdclk) IS     -- use DFF to delay half a clock cycle
-    BEGIN
-      IF falling_edge(control_fifo_rdclk) THEN
-        gig_eth_tx_fifo_q <= control_fifo_q(31 DOWNTO 0);
-      END IF;
-    END PROCESS;
-    gig_eth_tx_fifo_wren <= NOT control_fifo_empty;
-    control_fifo_rdreq   <= NOT gig_eth_tx_fifo_full;
+    gig_eth_tx_fifo_q     <= control_fifo_q(31 DOWNTO 0);
+    gig_eth_tx_fifo_wren  <= NOT control_fifo_empty;
+    control_fifo_rdreq    <= NOT gig_eth_tx_fifo_full;
   END GENERATE gig_eth_cores;
   ---------------------------------------------> gig_eth
   ---------------------------------------------< SDRAM
@@ -1202,6 +1198,7 @@ BEGIN
   END PROCESS;
   --
   PROCESS (fmc112_adc_data_clk) IS
+    VARIABLE counter : unsigned(fmc112_data_fifo_din'length-1 DOWNTO 0) := (OTHERS => '0');
   BEGIN
     IF falling_edge(fmc112_adc_data_clk) THEN  -- register half-cycle earlier
       -- swap for correct endian on x86 computer (through tcp core transmission)
@@ -1214,6 +1211,9 @@ BEGIN
       fmc112_data_fifo_din(16*7-1 DOWNTO 16*6) <= fmc112_adc_data1(7 DOWNTO 0) & fmc112_adc_data1(15 DOWNTO 8);
       fmc112_data_fifo_din(16*8-1 DOWNTO 16*7) <= fmc112_adc_data0(7 DOWNTO 0) & fmc112_adc_data0(15 DOWNTO 8);
       fmc112_data_fifo_wren                    <= config_reg(32*6+31);
+      -- FOR memory write continuity test
+      --fmc112_data_fifo_din <= std_logic_vector(counter);
+      --counter              := counter + 1;
     END IF;
   END PROCESS;
 
