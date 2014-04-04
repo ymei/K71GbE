@@ -184,15 +184,14 @@ ARCHITECTURE Behavioral OF sdram_buffer_fifo IS
   SIGNAL rd_app_cmd             : std_logic_vector(2 DOWNTO 0);
   SIGNAL rd_readable            : std_logic;
   --
-  SIGNAL wr_addr_begin_reg      : unsigned(APP_ADDR'length-2 DOWNTO 0);
-  SIGNAL wr_addr_i              : unsigned(APP_ADDR'length-2 DOWNTO 0);
+  SIGNAL wr_addr_begin_reg      : unsigned(APP_ADDR'length-1 DOWNTO 0);
+  SIGNAL wr_addr_i              : unsigned(APP_ADDR'length-1 DOWNTO 0);
   SIGNAL trigger_pointer_reg    : unsigned(TRIGGER_POINTER'length-1 DOWNTO 0);
   SIGNAL post_trigger_reg       : unsigned(POST_TRIGGER'length-1 DOWNTO 0);
   SIGNAL wr_wrap_around_reg     : std_logic;
   SIGNAL wr_wrapped_i           : std_logic;
   SIGNAL wr_stopping            : std_logic;
   SIGNAL wr_en                  : std_logic;
-  SIGNAL wr_writable            : std_logic;
   SIGNAL wr_app_en              : std_logic        := '0';
   SIGNAL wr_app_cmd             : std_logic_vector(2 DOWNTO 0);
   SIGNAL wr_start_pulse         : std_logic        := '0';
@@ -279,14 +278,14 @@ BEGIN
     ELSIF rising_edge(CLK) THEN
       -- start
       IF wr_start_pulse = '1' THEN
-        wr_addr_begin_reg   <= unsigned(WR_ADDR_BEGIN(WR_ADDR_BEGIN'length-2 DOWNTO 0));
+        wr_addr_begin_reg   <= unsigned(WR_ADDR_BEGIN);
         wr_wrap_around_reg  <= WR_WRAP_AROUND;
         wr_writing          <= '1';
         wr_stopping         <= '0';
         wr_wrapped_i        <= '0';
         rd_reading          <= '0';     -- abort reading
       -- wrap around
-      ELSIF wr_addr_i = wr_addr_begin_reg - APP_ADDR_BURST AND wr_en = '1' THEN
+      ELSIF wr_addr_i >= ('1' & wr_addr_begin_reg(wr_addr_begin_reg'length-2 DOWNTO 0)) THEN
         -- when no wrap-around, automatically stop upon address collision
         IF wr_wrap_around_reg = '0' THEN
           wr_writing  <= '0';
@@ -297,16 +296,16 @@ BEGIN
       END IF;
       -- stop
       IF wr_stop_pulse = '1' THEN
-        post_trigger_reg <= unsigned('0' & POST_TRIGGER(POST_TRIGGER'length-2 DOWNTO 0));
+        post_trigger_reg <= unsigned(POST_TRIGGER);
         IF wr_writing = '1' THEN  -- IF we are reading etc, wr_stop won't trigger
-          trigger_pointer_reg <= '0' & wr_addr_i;
+          trigger_pointer_reg <= wr_addr_i;
           wr_stopping         <= '1';
         END IF;
       END IF;
       -- stopping condition
       IF wr_stopping = '1' THEN
         addr_tmp := trigger_pointer_reg + post_trigger_reg;
-        IF addr_tmp(addr_tmp'length-2 DOWNTO 0) = wr_addr_i AND wr_en = '1' THEN
+        IF addr_tmp = wr_addr_i THEN
           wr_writing  <= '0';
           wr_stopping <= '0';
         END IF;
@@ -331,14 +330,36 @@ BEGIN
       wr_addr_i   <= (OTHERS => '0');
       write_state <= W0;
     ELSIF rising_edge(CLK) THEN
-      write_state <= W0;
+      write_state      <= W0;
+      indata_fifo_rden <= '0';
+      wr_wdf_wren      <= '0';
+      wr_wdf_end       <= '0';
+      wr_app_en        <= '0';
       CASE write_state IS
-        WHEN W0 =>
-          -- ALL back to defaults
-        WHEN W1 =>
+        WHEN W0 =>                      -- present data
+          IF indata_fifo_empty = '0' AND wr_writing = '1' THEN
+            indata_fifo_rden <= '1';    -- read next
+            wr_wdf_wren      <= '1';
+            wr_wdf_end       <= '1';
+            write_state      <= W1;
+          END IF;
+        WHEN W1 =>                      -- hold until data is accepted
           write_state <= W1;
-          IF wr_writable = '1' AND indata_fifo_empty = '0' THEN
-            wr_addr_i <= wr_addr_i + APP_ADDR_BURST;
+          wr_wdf_wren <= '1';
+          wr_wdf_end  <= '1';
+          IF APP_WDF_RDY = '1' THEN
+            wr_wdf_wren <= '0';
+            wr_wdf_end  <= '0';
+            wr_app_en   <= '1';         -- present address
+            write_state <= W2;
+          END IF;
+        WHEN W2 =>                      -- hold until cmd is accepted
+          wr_app_en   <= '1';
+          write_state <= W2;          
+          IF APP_RDY = '1' THEN         -- cmd accepted
+            wr_app_en   <= '0';
+            wr_addr_i   <= wr_addr_i + APP_ADDR_BURST;
+            write_state <= W0;
           END IF;
           IF wr_writing = '0' THEN
             write_state <= W0;
@@ -347,18 +368,13 @@ BEGIN
           write_state <= W0;
       END CASE;
       IF wr_start_pulse = '1' THEN  -- wr_writing must be true from this point on
-        wr_addr_i   <= unsigned(WR_ADDR_BEGIN(WR_ADDR_BEGIN'length-2 DOWNTO 0));
-        write_state <= W1;
+        wr_addr_i   <= unsigned(WR_ADDR_BEGIN);
+        write_state <= W0;
       END IF;
     END IF;
   END PROCESS;
-  wr_app_cmd       <= DDR3_CMD_WRITE;
-  wr_writable      <= APP_RDY AND APP_WDF_RDY;
-  indata_fifo_rden <= wr_writable AND (NOT indata_fifo_empty) AND wr_writing;
-  wr_en            <= wr_writable AND (NOT indata_fifo_empty) AND wr_writing;
-  wr_app_en        <= wr_en;
-  wr_wdf_wren      <= wr_en;
-  wr_wdf_end       <= wr_en;
+  wr_app_cmd <= DDR3_CMD_WRITE;
+  wr_en      <= wr_app_en OR wr_wdf_wren;
 
   -- read command and data
   PROCESS (CLK, RESET)
@@ -412,17 +428,18 @@ BEGIN
   outdata_fifo_wren <= APP_RD_DATA_VALID AND rd_reading;
 
   -- connect signals
-  APP_ADDR        <= '0' & std_logic_vector(wr_addr_i) WHEN wr_writing = '1' ELSE
-                     '0' & std_logic_vector(rd_addr_i(rd_addr_i'length-2 DOWNTO 0));
+  APP_ADDR <= '0' & std_logic_vector(wr_addr_i(wr_addr_i'length-2 DOWNTO 0))
+              WHEN wr_writing = '1' ELSE
+              '0' & std_logic_vector(rd_addr_i(rd_addr_i'length-2 DOWNTO 0));
   APP_CMD         <= wr_app_cmd WHEN wr_writing = '1' ELSE rd_app_cmd;
   APP_EN          <= wr_app_en OR rd_app_en;
   APP_WDF_END     <= wr_wdf_end;
   APP_WDF_WREN    <= wr_wdf_wren;
   --
   WR_BUSY         <= wr_writing;
-  WR_POINTER      <= '0' & std_logic_vector(wr_addr_i);
+  WR_POINTER      <= std_logic_vector(wr_addr_i);
   WR_WRAPPED      <= wr_wrapped_i;
-  TRIGGER_POINTER <= std_logic_vector(trigger_pointer_reg(TRIGGER_POINTER'length-1 DOWNTO 0));
+  TRIGGER_POINTER <= std_logic_vector(trigger_pointer_reg);
   --
   RD_BUSY         <= rd_reading;
 
