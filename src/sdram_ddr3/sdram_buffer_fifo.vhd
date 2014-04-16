@@ -70,6 +70,7 @@ ENTITY sdram_buffer_fifo IS
     APP_RD_DATA_END    : IN  std_logic;
     APP_RD_DATA_VALID  : IN  std_logic;
     --
+    CTRL_RESET         : IN  std_logic;
     WR_START           : IN  std_logic;
     WR_ADDR_BEGIN      : IN  std_logic_vector(APP_ADDR_WIDTH-1 DOWNTO 0);    
     WR_STOP            : IN  std_logic;
@@ -262,10 +263,10 @@ BEGIN
 
   ------------------------------------------------------------------------------  
   -- register addresses and status
-  PROCESS (CLK, RESET)
+  PROCESS (CLK, RESET, CTRL_RESET)
     VARIABLE addr_tmp : unsigned(trigger_pointer_reg'length-1 DOWNTO 0) := (OTHERS => '0');
   BEGIN
-    IF RESET = '1' THEN
+    IF RESET = '1' OR CTRL_RESET = '1' THEN
       wr_addr_begin_reg   <= (OTHERS => '0');
       wr_wrap_around_reg  <= '0';
       post_trigger_reg    <= (OTHERS => '0');
@@ -324,9 +325,9 @@ BEGIN
   END PROCESS;
 
   -- write command and data
-  PROCESS (CLK, RESET)
+  PROCESS (CLK, RESET, CTRL_RESET)
   BEGIN
-    IF RESET = '1' THEN
+    IF RESET = '1' OR CTRL_RESET = '1' THEN
       wr_addr_i   <= (OTHERS => '0');
       write_state <= W0;
     ELSIF rising_edge(CLK) THEN
@@ -377,9 +378,9 @@ BEGIN
   wr_en      <= wr_app_en OR wr_wdf_wren;
 
   -- read command and data
-  PROCESS (CLK, RESET)
+  PROCESS (CLK, RESET, CTRL_RESET)
   BEGIN
-    IF RESET = '1' THEN
+    IF RESET = '1' OR CTRL_RESET = '1' THEN
       rd_addr_i         <= (OTHERS => '0');
       rd_app_en         <= '0';
       read_state        <= R0;

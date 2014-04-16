@@ -894,7 +894,7 @@ begin
        -- configuration signals are synchonous with CLK
        -- Synchronous with CLK clock.
        MAC_ADDR        => x"000a3502a758",
-       IPv4_ADDR       => x"c0a80202",
+       IPv4_ADDR       => x"c0a80203",
        IPv6_ADDR       => (OTHERS => '0'),
        SUBNET_MASK     => x"ffffff00",
        GATEWAY_IP_ADDR => x"c0a80201",

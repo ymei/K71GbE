@@ -49,6 +49,10 @@ ENTITY top IS
     LED8Bit          : OUT   std_logic_vector(7 DOWNTO 0);
     DIPSw4Bit        : IN    std_logic_vector(3 DOWNTO 0);
     BTN5Bit          : IN    std_logic_vector(4 DOWNTO 0);
+    USER_SMA_CLOCK_P : OUT   std_logic;
+    USER_SMA_CLOCK_N : OUT   std_logic;
+    USER_SMA_GPIO_P  : OUT   std_logic;
+    USER_SMA_GPIO_N  : IN    std_logic;
     -- UART via usb
     USB_RX           : OUT   std_logic;
     USB_TX           : IN    std_logic;
@@ -89,7 +93,6 @@ ENTITY top IS
     -- FMC LPC FMC112
     I2C_SCL          : INOUT std_logic;
     I2C_SDA          : INOUT std_logic;
-    TRIG_OUT_0       : OUT   std_logic;
     CTRL_1           : INOUT std_logic_vector(7 DOWNTO 0);
     CLK_TO_FPGA_P_1  : IN    std_logic;
     CLK_TO_FPGA_N_1  : IN    std_logic;
@@ -366,6 +369,7 @@ ARCHITECTURE Behavioral OF top IS
       -- Internal data r/w interface
       UI_CLK                : OUT   std_logic;
       --
+      CTRL_RESET            : IN    std_logic;
       WR_START              : IN    std_logic;
       WR_ADDR_BEGIN         : IN    std_logic_vector(APP_ADDR_WIDTH-1 DOWNTO 0);
       WR_STOP               : IN    std_logic;
@@ -613,6 +617,7 @@ ARCHITECTURE Behavioral OF top IS
   SIGNAL sdram_app_rd_data_valid           : std_logic;
   ---------------------------------------------> SDRAM
   ---------------------------------------------< FMC112
+  SIGNAL TRIG_OUT_0                        : std_logic;
   SIGNAL fmc112_cmd_out                    : std_logic_vector(63 DOWNTO 0);
   SIGNAL fmc112_cmd_out_val                : std_logic;
   SIGNAL fmc112_cmd_in                     : std_logic_vector(63 DOWNTO 0);
@@ -637,6 +642,16 @@ ARCHITECTURE Behavioral OF top IS
   SIGNAL fmc112_data_fifo_dout             : std_logic_vector(31 DOWNTO 0);
   SIGNAL fmc112_data_fifo_full             : std_logic;
   SIGNAL fmc112_data_fifo_empty            : std_logic;
+  SIGNAL fmc112_ctrl_1                     : std_logic_vector(7 DOWNTO 0);
+  SIGNAL fmc112_trig_allow                 : std_logic;
+  SIGNAL fmc112_trig_in                    : std_logic;
+  SIGNAL fmc112_trig_prev                  : std_logic;
+  SIGNAL fmc112_trig_prev1                 : std_logic;
+  SIGNAL fmc112_trig_prev2                 : std_logic;
+  SIGNAL fmc112_trig_synced                : std_logic;
+  SIGNAL fmc112_data_wr_start              : std_logic;
+  SIGNAL fmc112_data_wr_busy               : std_logic;  
+  SIGNAL fmc112_data_wr_wrapped            : std_logic;  
   ---------------------------------------------> FMC112
   ---------------------------------------------< debug
   SIGNAL dbg_ila_probe0                           : std_logic_vector (63 DOWNTO 0);
@@ -1084,15 +1099,16 @@ BEGIN
       -- Internal data r/w interface
       UI_CLK                => clk_200MHz,
       --
-      WR_START              => pulse_reg(3),
+      CTRL_RESET            => pulse_reg(6),
+      WR_START              => fmc112_data_wr_start,
       WR_ADDR_BEGIN         => config_reg(32*4+27 DOWNTO 32*4),
       WR_STOP               => pulse_reg(4),
       WR_WRAP_AROUND        => config_reg(32*4+28),
       POST_TRIGGER          => config_reg(32*5+27 DOWNTO 32*5),
-      WR_BUSY               => status_reg(64*2+28),
+      WR_BUSY               => fmc112_data_wr_busy,
       WR_POINTER            => OPEN,
       TRIGGER_POINTER       => status_reg(64*2+27 DOWNTO 64*2),
-      WR_WRAPPED            => status_reg(64*2+29),
+      WR_WRAPPED            => fmc112_data_wr_wrapped,
       RD_START              => pulse_reg(5),
       RD_ADDR_BEGIN         => (OTHERS => '0'),
       RD_ADDR_END           => config_reg(32*6+27 DOWNTO 32*6),
@@ -1119,6 +1135,9 @@ BEGIN
       DBG_APP_RD_DATA       => sdram_app_rd_data,
       DBG_APP_RD_DATA_VALID => sdram_app_rd_data_valid
     );
+  status_reg(64*2+28) <= fmc112_data_wr_busy;
+  status_reg(64*2+29) <= fmc112_data_wr_wrapped;
+  --
   dbg_ila_probe3(27 DOWNTO 0)               <= sdram_app_addr;
   dbg_ila_probe3(28)                        <= sdram_app_en;
   dbg_ila_probe3(29)                        <= sdram_app_rdy;
@@ -1148,7 +1167,7 @@ BEGIN
       --STAR sip_fmc_ct_gen, ID=0 (ext_fmc_ct_gen)
       TRIG_OUT_0      => TRIG_OUT_0,
       --STAR sip_fmc112, ID=1 (ext_fmc112)
-      CTRL_1          => CTRL_1,
+      CTRL_1          => fmc112_ctrl_1,
       CLK_TO_FPGA_P_1 => CLK_TO_FPGA_P_1,
       CLK_TO_FPGA_N_1 => CLK_TO_FPGA_N_1,
       EXT_TRIGGER_P_1 => EXT_TRIGGER_P_1,
@@ -1178,7 +1197,9 @@ BEGIN
       PHY_OUT_DATA10  => fmc112_adc_data10,
       PHY_OUT_DATA11  => fmc112_adc_data11
     );
-  fmc112_cmd_in <= config_reg(64*2-1 DOWNTO 64*1);  
+  CTRL_1         <= fmc112_ctrl_1;
+  fmc112_trig_in <= fmc112_ctrl_1(7);
+  fmc112_cmd_in  <= config_reg(64*2-1 DOWNTO 64*1);  
   fmc112_cmd_in_val_sync : pulse2pulse
     PORT MAP (
       IN_CLK   => control_clk,
@@ -1213,9 +1234,32 @@ BEGIN
       fmc112_data_fifo_wren                    <= config_reg(32*6+31);
       -- FOR memory write continuity test
       --fmc112_data_fifo_din <= std_logic_vector(counter);
-      --counter              := counter + 1;
+      counter              := counter + 1;
+      -- reference clock out
+      USER_SMA_CLOCK_P <=     counter(2);
+      USER_SMA_CLOCK_N <= NOT counter(2);
     END IF;
   END PROCESS;
+  -- capture the rising edge of trigger
+  PROCESS (control_clk, reset) IS
+  BEGIN 
+    IF reset = '1' THEN
+      fmc112_trig_prev  <= '0';
+      fmc112_trig_prev1 <= '0';
+      fmc112_trig_prev2 <= '0';
+    ELSIF rising_edge(control_clk) THEN
+      fmc112_trig_prev  <= fmc112_trig_in;
+      fmc112_trig_prev1 <= fmc112_trig_prev;
+      fmc112_trig_prev2 <= fmc112_trig_prev1;
+    END IF;
+  END PROCESS;
+  fmc112_trig_allow  <= config_reg(32*6+30);
+  fmc112_trig_synced <= '1' WHEN fmc112_trig_prev2 = '0' AND fmc112_trig_prev1 = '1' ELSE
+                        '0';
+  fmc112_data_wr_start <= pulse_reg(3) OR (fmc112_trig_synced AND fmc112_trig_allow
+                                           AND (NOT fmc112_data_wr_busy)
+                                           AND (NOT fmc112_data_wr_wrapped));
+  USER_SMA_GPIO_P      <= fmc112_trig_synced;
 
   dbg_ila1_probe0 <= fmc112_adc_data0;
   dbg_ila1_probe1 <= fmc112_adc_data4;

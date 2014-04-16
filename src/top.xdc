@@ -141,6 +141,17 @@ set_property SLEW SLOW [get_ports {BTN5Bit[4]}]
 set_property IOSTANDARD LVCMOS15 [get_ports {BTN5Bit[4]}]
 set_property LOC AC6 [get_ports {BTN5Bit[4]}]
 
+# SMA
+set_property PACKAGE_PIN L25 [get_ports {USER_SMA_CLOCK_P}]
+set_property IOSTANDARD LVCMOS25 [get_ports USER_SMA_CLOCK_P]
+set_property PACKAGE_PIN K25 [get_ports {USER_SMA_CLOCK_N}]
+set_property IOSTANDARD LVCMOS25 [get_ports USER_SMA_CLOCK_N]
+
+set_property PACKAGE_PIN Y23 [get_ports USER_SMA_GPIO_P]
+set_property IOSTANDARD LVCMOS25 [get_ports USER_SMA_GPIO_P]
+set_property PACKAGE_PIN Y24 [get_ports USER_SMA_GPIO_N]
+set_property IOSTANDARD LVCMOS25 [get_ports USER_SMA_GPIO_N]
+
 #>-- LEDs, buttons and switches -->
 
 #<-- UART --<
@@ -263,9 +274,6 @@ set_property PACKAGE_PIN K21 [get_ports I2C_SCL]
 set_property IOSTANDARD LVCMOS25 [get_ports I2C_SCL]
 set_property PACKAGE_PIN L21 [get_ports I2C_SDA]
 set_property IOSTANDARD LVCMOS25 [get_ports I2C_SDA]
-# 
-set_property PACKAGE_PIN Y23 [get_ports TRIG_OUT_0]
-set_property IOSTANDARD LVCMOS25 [get_ports TRIG_OUT_0]
 # FMC signals (FMC112 on KC705 LPC)
 set_property PACKAGE_PIN AG23 [get_ports CLK_TO_FPGA_N_1]
 set_property PACKAGE_PIN AF22 [get_ports CLK_TO_FPGA_P_1]

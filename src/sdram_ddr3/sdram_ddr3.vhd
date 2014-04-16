@@ -67,6 +67,7 @@ ENTITY sdram_ddr3 IS
     -- Internal data r/w interface
     UI_CLK                : OUT   std_logic;
     --
+    CTRL_RESET            : IN  std_logic;
     WR_START              : IN    std_logic;
     WR_ADDR_BEGIN         : IN    std_logic_vector(APP_ADDR_WIDTH-1 DOWNTO 0);
     WR_STOP               : IN    std_logic;
@@ -178,6 +179,7 @@ ARCHITECTURE Behavioral OF sdram_ddr3 IS
     APP_RD_DATA_END    : IN  std_logic;
     APP_RD_DATA_VALID  : IN  std_logic;
     --
+    CTRL_RESET         : IN  std_logic;
     WR_START           : IN  std_logic;
     WR_ADDR_BEGIN      : IN  std_logic_vector(APP_ADDR_WIDTH-1 DOWNTO 0);    
     WR_STOP            : IN  std_logic;
@@ -295,6 +297,7 @@ BEGIN
       APP_RD_DATA_END    => app_rd_data_end,
       APP_RD_DATA_VALID  => app_rd_data_valid,
       --
+      CTRL_RESET         => CTRL_RESET,
       WR_START           => WR_START,
       WR_ADDR_BEGIN      => WR_ADDR_BEGIN,
       WR_STOP            => WR_STOP,
