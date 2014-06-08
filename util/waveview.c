@@ -142,6 +142,11 @@ void change_size(int w, int h)
 }
 void process_normal_keys(unsigned char key, int x, int y)
 {
+    ssize_t xHmL;
+    double frac[] = {0.01, 0.10, 0.20, 0.50};
+
+    xHmL = xH - xL + 1;
+    
     switch(key) {
     case 27:
 		exit(0);
@@ -154,7 +159,11 @@ void process_normal_keys(unsigned char key, int x, int y)
         if(xL < 0) xL = 0;
         break;        
     case '[':
-        xL -= 0.01 * wavFile->nPt;
+        xL -= frac[0]*xHmL;
+        if(xL < 0) xL = 0;
+        break;
+    case ';':
+        xL -= frac[1]*xHmL;
         if(xL < 0) xL = 0;
         break;
     case '=':
@@ -162,7 +171,11 @@ void process_normal_keys(unsigned char key, int x, int y)
         if(xL > xH) xL = xH;
         break;
     case ']':
-        xL += 0.01 * wavFile->nPt;
+        xL += frac[0]*xHmL;
+        if(xL > xH) xL = xH;
+        break;
+    case '\'':
+        xL += frac[1]*xHmL;
         if(xL > xH) xL = xH;
         break;
     case '_':
@@ -170,7 +183,11 @@ void process_normal_keys(unsigned char key, int x, int y)
         if(xH < xL) xH = xL;
         break;        
     case '{':
-        xH -= 0.01 * wavFile->nPt;
+        xH -= frac[0]*xHmL;
+        if(xH < xL) xH = xL;
+        break;
+    case ':':
+        xH -= frac[1]*xHmL;
         if(xH < xL) xH = xL;
         break;
     case '+':
@@ -179,10 +196,15 @@ void process_normal_keys(unsigned char key, int x, int y)
             xH = wavFile->nPt - 1;
         break;
     case '}':
-        xH += 0.01 * wavFile->nPt;
+        xH += frac[0]*xHmL;
         if(xH >= wavFile->nPt)
             xH = wavFile->nPt - 1;
         break;
+    case '\"':
+        xH += frac[1]*xHmL;
+        if(xH >= wavFile->nPt)
+            xH = wavFile->nPt - 1;
+        break;        
     default:
         break;
     }
@@ -192,15 +214,18 @@ void process_normal_keys(unsigned char key, int x, int y)
 void process_special_keys(int key, int x, int y)
 {
     ssize_t dx;
+    ssize_t xHmL;
+    double frac[] = {0.01, 0.10, 0.20, 0.50};
     int modifier;
 
+    xHmL = xH - xL + 1;
     modifier = glutGetModifiers();
     if(modifier & GLUT_ACTIVE_SHIFT) {
-        dx = 10;
+        dx = frac[0]*xHmL;
     } else if(modifier & GLUT_ACTIVE_ALT) {
-        dx = 100;
+        dx = frac[1]*xHmL;
     } else if(modifier & GLUT_ACTIVE_CTRL) {
-        dx = 1000;
+        dx = frac[2]*xHmL;
     } else {
         dx = 1;
     }
@@ -322,6 +347,11 @@ int main(int argc, char **argv)
 {
     char *inFileName;
 
+    if(argc < 2) {
+        fprintf(stderr, "%s file.h5\n", argv[0]);
+        return EXIT_FAILURE;
+    }
+    
     inFileName = argv[1];
     nChDisp = 4;
     
