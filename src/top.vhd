@@ -335,7 +335,7 @@ ARCHITECTURE Behavioral OF top IS
   ---------------------------------------------< SDRAM
   COMPONENT sdram_ddr3
     GENERIC (
-      INDATA_WIDTH   : positive := 128;
+      INDATA_WIDTH   : positive := 256;
       OUTDATA_WIDTH  : positive := 32;
       APP_ADDR_WIDTH : positive := 28;
       APP_DATA_WIDTH : positive := 512;
@@ -404,6 +404,28 @@ ARCHITECTURE Behavioral OF top IS
       DBG_APP_WDF_RDY       : OUT   std_logic;
       DBG_APP_RD_DATA       : OUT   std_logic_vector(APP_DATA_WIDTH-1 DOWNTO 0);
       DBG_APP_RD_DATA_VALID : OUT   std_logic
+    );
+  END COMPONENT;
+  COMPONENT channel_sel
+    GENERIC (
+      CHANNEL_WIDTH : positive := 16;
+      INDATA_WIDTH  : positive := 256;
+      OUTDATA_WIDTH : positive := 256
+    );
+    PORT (
+      CLK             : IN  std_logic;  -- fifo wrclk
+      RESET           : IN  std_logic;
+      SEL             : IN  std_logic_vector(7 DOWNTO 0);
+      --
+      DATA_FIFO_RESET : IN  std_logic;
+      --
+      INDATA_Q        : IN  std_logic_vector(INDATA_WIDTH-1 DOWNTO 0);
+      DATA_FIFO_WREN  : IN  std_logic;
+      DATA_FIFO_FULL  : OUT std_logic;
+      --
+      OUTDATA_FIFO_Q  : OUT std_logic_vector(OUTDATA_WIDTH-1 DOWNTO 0);
+      DATA_FIFO_RDEN  : IN  std_logic;
+      DATA_FIFO_EMPTY : OUT std_logic
     );
   END COMPONENT;
   ---------------------------------------------> SDRAM
@@ -635,13 +657,19 @@ ARCHITECTURE Behavioral OF top IS
   SIGNAL fmc112_adc_data9                  : std_logic_vector(15 DOWNTO 0);
   SIGNAL fmc112_adc_data10                 : std_logic_vector(15 DOWNTO 0);
   SIGNAL fmc112_adc_data11                 : std_logic_vector(15 DOWNTO 0);
+  SIGNAL fmc112_data_fifo_reset            : std_logic;  
   SIGNAL fmc112_data_fifo_rdclk            : std_logic;
-  SIGNAL fmc112_data_fifo_din              : std_logic_vector(127 DOWNTO 0);
+  SIGNAL fmc112_data_fifo_din              : std_logic_vector(255 DOWNTO 0);
   SIGNAL fmc112_data_fifo_wren             : std_logic;
   SIGNAL fmc112_data_fifo_rden             : std_logic;
   SIGNAL fmc112_data_fifo_dout             : std_logic_vector(31 DOWNTO 0);
   SIGNAL fmc112_data_fifo_full             : std_logic;
   SIGNAL fmc112_data_fifo_empty            : std_logic;
+  SIGNAL fmc112_idata_fifo_q               : std_logic_vector(255 DOWNTO 0);
+  SIGNAL fmc112_idata_fifo_wren            : std_logic;
+  SIGNAL fmc112_idata_fifo_rden            : std_logic;
+  SIGNAL fmc112_idata_fifo_full            : std_logic;
+  SIGNAL fmc112_idata_fifo_empty           : std_logic;
   SIGNAL fmc112_ctrl_1                     : std_logic_vector(7 DOWNTO 0);
   SIGNAL fmc112_trig_allow                 : std_logic;
   SIGNAL fmc112_trig_in                    : std_logic;
@@ -1114,11 +1142,11 @@ BEGIN
       RD_ADDR_END           => config_reg(32*6+27 DOWNTO 32*6),
       RD_BUSY               => status_reg(64*2+30),
       --
-      DATA_FIFO_RESET       => pulse_reg(2),
+      DATA_FIFO_RESET       => fmc112_data_fifo_reset,
       INDATA_FIFO_WRCLK     => fmc112_adc_data_clk,
-      INDATA_FIFO_Q         => fmc112_data_fifo_din,
-      INDATA_FIFO_FULL      => fmc112_data_fifo_full,
-      INDATA_FIFO_WREN      => fmc112_data_fifo_wren,
+      INDATA_FIFO_Q         => fmc112_idata_fifo_q,
+      INDATA_FIFO_FULL      => fmc112_idata_fifo_full,
+      INDATA_FIFO_WREN      => fmc112_idata_fifo_wren,
       --
       OUTDATA_FIFO_RDCLK    => fmc112_data_fifo_rdclk,
       OUTDATA_FIFO_Q        => fmc112_data_fifo_dout,
@@ -1135,8 +1163,28 @@ BEGIN
       DBG_APP_RD_DATA       => sdram_app_rd_data,
       DBG_APP_RD_DATA_VALID => sdram_app_rd_data_valid
     );
-  status_reg(64*2+28) <= fmc112_data_wr_busy;
-  status_reg(64*2+29) <= fmc112_data_wr_wrapped;
+  fmc112_data_fifo_reset <= pulse_reg(2);
+  status_reg(64*2+28)    <= fmc112_data_wr_busy;
+  status_reg(64*2+29)    <= fmc112_data_wr_wrapped;
+  --
+  channel_set_inst : channel_sel
+    PORT MAP (
+      CLK             => fmc112_adc_data_clk,  -- fifo wrclk
+      RESET           => reset,
+      SEL             => config_reg(32*7+7 DOWNTO 32*7),
+      --
+      DATA_FIFO_RESET => fmc112_data_fifo_reset,
+      --
+      INDATA_Q        => fmc112_data_fifo_din,
+      DATA_FIFO_WREN  => fmc112_data_fifo_wren,
+      DATA_FIFO_FULL  => fmc112_data_fifo_full,
+      --
+      OUTDATA_FIFO_Q  => fmc112_idata_fifo_q,
+      DATA_FIFO_RDEN  => fmc112_idata_fifo_rden,
+      DATA_FIFO_EMPTY => fmc112_idata_fifo_empty
+    );
+  fmc112_idata_fifo_rden <= NOT fmc112_idata_fifo_full;
+  fmc112_idata_fifo_wren <= NOT fmc112_idata_fifo_empty;
   --
   dbg_ila_probe3(27 DOWNTO 0)               <= sdram_app_addr;
   dbg_ila_probe3(28)                        <= sdram_app_en;
@@ -1218,23 +1266,20 @@ BEGIN
     END IF;
   END PROCESS;
   --
+  fmc112_data_fifo_din <= x"3000020000100000" & fmc112_adc_data11 & fmc112_adc_data10
+                          & fmc112_adc_data9  & fmc112_adc_data8  & fmc112_adc_data7
+                          & fmc112_adc_data6  & fmc112_adc_data5  & fmc112_adc_data4
+                          & fmc112_adc_data3  & fmc112_adc_data2  & fmc112_adc_data1
+                          & fmc112_adc_data0;
+
   PROCESS (fmc112_adc_data_clk) IS
     VARIABLE counter : unsigned(fmc112_data_fifo_din'length-1 DOWNTO 0) := (OTHERS => '0');
   BEGIN
     IF falling_edge(fmc112_adc_data_clk) THEN  -- register half-cycle earlier
-      -- swap for correct endian on x86 computer (through tcp core transmission)
-      fmc112_data_fifo_din(16*1-1 DOWNTO 16*0) <= fmc112_adc_data7(7 DOWNTO 0) & fmc112_adc_data7(15 DOWNTO 8);
-      fmc112_data_fifo_din(16*2-1 DOWNTO 16*1) <= fmc112_adc_data6(7 DOWNTO 0) & fmc112_adc_data6(15 DOWNTO 8);
-      fmc112_data_fifo_din(16*3-1 DOWNTO 16*2) <= fmc112_adc_data5(7 DOWNTO 0) & fmc112_adc_data5(15 DOWNTO 8);
-      fmc112_data_fifo_din(16*4-1 DOWNTO 16*3) <= fmc112_adc_data4(7 DOWNTO 0) & fmc112_adc_data4(15 DOWNTO 8);
-      fmc112_data_fifo_din(16*5-1 DOWNTO 16*4) <= fmc112_adc_data3(7 DOWNTO 0) & fmc112_adc_data3(15 DOWNTO 8);
-      fmc112_data_fifo_din(16*6-1 DOWNTO 16*5) <= fmc112_adc_data2(7 DOWNTO 0) & fmc112_adc_data2(15 DOWNTO 8);
-      fmc112_data_fifo_din(16*7-1 DOWNTO 16*6) <= fmc112_adc_data1(7 DOWNTO 0) & fmc112_adc_data1(15 DOWNTO 8);
-      fmc112_data_fifo_din(16*8-1 DOWNTO 16*7) <= fmc112_adc_data0(7 DOWNTO 0) & fmc112_adc_data0(15 DOWNTO 8);
-      fmc112_data_fifo_wren                    <= config_reg(32*6+31);
+      fmc112_data_fifo_wren <= config_reg(32*6+31);
       -- FOR memory write continuity test
-      --fmc112_data_fifo_din <= std_logic_vector(counter);
-      counter              := counter + 1;
+      -- fmc112_data_fifo_din <= std_logic_vector(counter);
+      counter := counter + 1;
       -- reference clock out
       USER_SMA_CLOCK_P <=     counter(2);
       USER_SMA_CLOCK_N <= NOT counter(2);

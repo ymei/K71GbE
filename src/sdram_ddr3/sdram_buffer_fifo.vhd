@@ -46,7 +46,7 @@ USE UNISIM.VComponents.ALL;
 
 ENTITY sdram_buffer_fifo IS
   GENERIC (
-    INDATA_WIDTH   : positive := 128;
+    INDATA_WIDTH   : positive := 256;
     OUTDATA_WIDTH  : positive := 32;
     APP_ADDR_WIDTH : positive := 28;
     APP_DATA_WIDTH : positive := 512;
@@ -111,12 +111,12 @@ ARCHITECTURE Behavioral OF sdram_buffer_fifo IS
     );
   END COMPONENT;
 
-  COMPONENT fifo128to512                -- FWFT
+  COMPONENT fifo256to512                -- FWFT
     PORT (
       RST        : IN  std_logic;
       WR_CLK     : IN  std_logic;
       RD_CLK     : IN  std_logic;
-      DIN        : IN  std_logic_vector(127 DOWNTO 0);
+      DIN        : IN  std_logic_vector(255 DOWNTO 0);
       WR_EN      : IN  std_logic;
       RD_EN      : IN  std_logic;
       DOUT       : OUT std_logic_vector(511 DOWNTO 0);
@@ -203,7 +203,7 @@ ARCHITECTURE Behavioral OF sdram_buffer_fifo IS
   
 BEGIN
 
-  indata_fifo : fifo128to512            -- FWFT
+  indata_fifo : fifo256to512            -- FWFT
   PORT MAP (
     RST    => RESET OR DATA_FIFO_RESET,
     WR_CLK => INDATA_FIFO_WRCLK,

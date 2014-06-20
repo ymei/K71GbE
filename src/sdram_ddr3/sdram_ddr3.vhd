@@ -33,7 +33,7 @@ USE UNISIM.VComponents.ALL;
 
 ENTITY sdram_ddr3 IS
   GENERIC (
-    INDATA_WIDTH   : positive := 128;
+    INDATA_WIDTH   : positive := 256;
     OUTDATA_WIDTH  : positive := 32;
     APP_ADDR_WIDTH : positive := 28;
     APP_DATA_WIDTH : positive := 512;
@@ -155,7 +155,7 @@ ARCHITECTURE Behavioral OF sdram_ddr3 IS
 
   COMPONENT sdram_buffer_fifo
   GENERIC (
-    INDATA_WIDTH   : positive := 128;
+    INDATA_WIDTH   : positive := 256;
     OUTDATA_WIDTH  : positive := 32;
     APP_ADDR_WIDTH : positive := 28;
     APP_DATA_WIDTH : positive := 512;
