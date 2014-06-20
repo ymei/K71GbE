@@ -558,7 +558,7 @@ int fmc112_measure_freq(int sockfd, char *buf)
 int fmc112_prepare(int sockfd)
 {
     char buf[BUFSIZ];
-    uint32_t *buf32;
+    uint32_t *buf32, val;
     uint64_t retcmd, cid;
     size_t num_sip_star, n;
     ssize_t i;
@@ -623,7 +623,6 @@ int fmc112_prepare(int sockfd)
     n = query_response(sockfd, buf, n, buf, 0);
     n = cmd_write_register(&buf32, 9, 0x0000); /* no wrap_around */
     n = query_response(sockfd, buf, n, buf, 0);
-
     /* post_trigger */
     n = cmd_write_register(&buf32, 10, 0x0000);
     n = query_response(sockfd, buf, n, buf, 0);
@@ -632,9 +631,30 @@ int fmc112_prepare(int sockfd)
     /* rd_addr_end */
     n = cmd_write_register(&buf32, 12, 0x0000); /* low bits */
     n = query_response(sockfd, buf, n, buf, 0);
+
+    /* select channel */
+    switch(nCh) {
+    case 4:
+        val = 0x0000;
+        if(chMask & 0x000f) val |= 0x0000;
+        if(chMask & 0x00f0) val |= 0x0001;
+        if(chMask & 0x0f00) val |= 0x0002;
+        if(chMask & 0xf000) val |= 0x0003;
+        break;
+    case 8:
+        val = 0x0010; break;
+        if(chMask & 0x00ff) val |= 0x0000;
+        if(chMask & 0xff00) val |= 0x0001;
+    case 16:
+        val = 0x0020; break;
+    default:
+        val = 0x0000;
+        break;
+    }
+    n = cmd_write_register(&buf32, 14, val);
+    n = query_response(sockfd, buf, n, buf, 0);
     
     free(sip_star_info);
-
     return 1;
 }
 
@@ -657,14 +677,15 @@ int fmc112_arm_acquire(int sockfd)
     /* sdram ctrl_reset */
     n = cmd_send_pulse(&buf32, 0x40); /* pulse_reg(6) */
     n = query_response(sockfd, buf, n, buf, 0); Sleep(2);
-    /* sdram wr_start */
-    // n = cmd_send_pulse(&buf32, 0x08); /* pulse_reg(3) */
-    // n = query_response(sockfd, buf, n, buf, 0); Sleep(2);
     /* enable fmc data fifo wren */
     n = cmd_write_register(&buf32, 13, 0x8800); /* also high bits of rd_addr_end */
     n = query_response(sockfd, buf, n, buf, 0); Sleep(2);
     /* allow trigger */
     n = cmd_write_register(&buf32, 13, 0xc800); /* also high bits of rd_addr_end */
+    n = query_response(sockfd, buf, n, buf, 0);
+    /* software trigger, for testing */
+    Sleep(2);
+    n = cmd_send_pulse(&buf32, 0x08); /* pulse_reg(3) */
     n = query_response(sockfd, buf, n, buf, 0);
     
     finished = 0;
@@ -689,7 +710,7 @@ int fmc112_arm_acquire(int sockfd)
 
 int fmc112_read_save(int sockfd)
 {
-#define NBASK (32768 * 4)
+#define NBASK (4096 * 32)
     char ibuf[NBASK];
     SCOPE_DATA_TYPE *ibufsd;
     char buf[BUFSIZ];
@@ -715,7 +736,7 @@ int fmc112_read_save(int sockfd)
 
     iP = 0;
     nb = 0;
-    while(nb < SCOPE_NCH * waveformAttr.nPt * sizeof(SCOPE_DATA_TYPE)) {
+    while(nb < SCOPE_NCH * SCOPE_MEM_LENGTH_MAX * sizeof(SCOPE_DATA_TYPE)) {
         n = query_response(sockfd, buf, ncmd, NULL, 0);
 
         readTotal = 0;
@@ -777,8 +798,8 @@ int fmc112_read_save(int sockfd)
                     waveformEvent.wavBuf[j * waveformAttr.nPt + iP] = (ibufsd[i]>>2);
                                                   /* lowest 2 bits are 0's for 14-bit adc data */
                     j++;
+                    i++;
                 }
-                i++;
             }
             iP++;
         }
@@ -821,14 +842,18 @@ int main(int argc, char **argv)
         error_printf("Invalid chMask input: %s\n", argv[4]);
         return EXIT_FAILURE;
     }
+    if((nCh!=4) && (nCh!=8) && (nCh!=16)) {
+        error_printf("chMask must represent allowed 4,8,16 channel groups\n");
+        return EXIT_FAILURE;
+    }
     if(argc>=7)
         nWfmPerChunk = atol(argv[6]);
-
+    
     debug_printf("outFileName: %s, chMask: 0x%02x, nCh: %zd, nEvents: %zd, nWfmPerChunk: %zd\n",
                  outFileName, chMask, nCh, nEvents, nWfmPerChunk);
 
     waveformAttr.chMask  = chMask;
-    waveformAttr.nPt     = SCOPE_MEM_LENGTH_MAX;
+    waveformAttr.nPt     = SCOPE_MEM_LENGTH_MAX * (SCOPE_NCH / nCh);
     waveformAttr.nFrames = 0;
     waveformAttr.dt      = 8.0e-9;
     waveformAttr.t0      = 0.0;

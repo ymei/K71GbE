@@ -3,8 +3,8 @@
 
 #define HDF5IO(name) hdf5io_ ## name
 
-#define SCOPE_NCH 8
-#define SCOPE_MEM_LENGTH_MAX 67108864 /* 1GiB memory, (16-bit X 8-ch) per point */
+#define SCOPE_NCH 16
+#define SCOPE_MEM_LENGTH_MAX 33554432 /* 1GiB memory, (16-bit X 16-ch) per point */
 #define SCOPE_DATA_TYPE int16_t
 #define SCOPE_DATA_HDF5_TYPE H5T_NATIVE_INT16
 

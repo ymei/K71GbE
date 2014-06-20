@@ -24,7 +24,14 @@ GLfloat colors[][4] = {
     {1.0, 0.0, 1.0, 0.5},
     {0.2, 1.0, 0.3, 0.5},
     {1.0, 0.2, 0.3, 0.5},
-    {1.0, 1.0, 1.0, 0.5},    
+    {0.2, 0.3, 1.0, 0.5},
+    {1.0, 0.3, 0.2, 0.5},
+    {0.0, 1.0, 0.3, 0.5},
+    {1.0, 0.3, 0.5, 0.5},
+    {0.5, 1.0, 0.3, 0.5},
+    {0.3, 0.5, 1.0, 0.5},
+    {0.3, 1.0, 0.5, 0.5},
+    {0.5, 0.3, 1.0, 0.5}
 };
 
 #define INIT_WINDOW_WIDTH 1600
@@ -353,8 +360,6 @@ int main(int argc, char **argv)
     }
     
     inFileName = argv[1];
-    nChDisp = 4;
-    
     wavFile = hdf5io_open_file_for_read(inFileName);
     hdf5io_read_waveform_attribute_in_file_header(wavFile, &wavAttr);    
     fprintf(stdout, "waveform_file:\n"
@@ -382,6 +387,8 @@ int main(int argc, char **argv)
         sizeof(SCOPE_DATA_TYPE) * wavFile->nPt * wavFile->nCh);
     wavDigest = (SCOPE_DATA_TYPE*)malloc(sizeof(SCOPE_DATA_TYPE) * wavDigestLen * wavFile->nCh);
 
+    nChDisp = wavFile->nCh;
+    
     xL = 0;
     xH = MIN(wavFile->nPt, INIT_WINDOW_WIDTH);
     
