@@ -398,6 +398,13 @@ set_property IODELAY_GROUP fmc112_iodelay_grp [get_cells -hier -filter {name =~ 
 # create_clock -name gt0_txusrclk2_i  -period 6.4 [get_pins -hier -filter {NAME =~ */gt0_txusrclk2_i}]
 # set_property LOC GTXE2_CHANNEL_X0Y8 [get_cells -hierarchical -filter {NAME =~ */k7_gtxwizard_v1_6_*/gt0_k7_gtxwizard_v1_6_*/gtxe2_i}]
 
+# false paths
+set_false_path -from [get_pins -of_objects [get_cells -hierarchical -filter {NAME =~ *p2p_trigger_inst*outreset_reg}] -filter {NAME =~ *C}]
+set_false_path -from [get_pins -of_objects [get_cells -hierarchical -filter {NAME =~ *pulse2pulse*outreset_reg}] -filter {NAME =~ *C}]
+set_false_path -from [get_pins -of_objects [get_cells -hierarchical -filter {NAME =~ *fmc112_trig_prev1_reg}] -filter {NAME =~ *C}]
+set_false_path -from [get_pins -of_objects [get_cells -hierarchical -filter {NAME =~ *fmc112_trig_prev2_reg}] -filter {NAME =~ *C}]
+set_false_path -to [get_pins -of_objects [get_cells -hierarchical -filter {NAME =~ *channel_avg_inst*trig_prev_reg}] -filter {NAME =~ *D}]
+
 #>-- FMC112 -->
 
 # Local Variables:

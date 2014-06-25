@@ -68,6 +68,7 @@
 static time_t startTime, stopTime;
 
 static unsigned int chMask;
+static unsigned int avgMask;
 static size_t nCh;
 static size_t nEvents;
 static struct hdf5io_waveform_file *waveformFile;
@@ -632,7 +633,7 @@ int fmc112_prepare(int sockfd)
     n = cmd_write_register(&buf32, 12, 0x0000); /* low bits */
     n = query_response(sockfd, buf, n, buf, 0);
 
-    /* select channel */
+    /* select channel & average */
     switch(nCh) {
     case 4:
         val = 0x0000;
@@ -651,6 +652,7 @@ int fmc112_prepare(int sockfd)
         val = 0x0000;
         break;
     }
+    val |=  (avgMask<<8);
     n = cmd_write_register(&buf32, 14, val);
     n = query_response(sockfd, buf, n, buf, 0);
     
@@ -684,9 +686,9 @@ int fmc112_arm_acquire(int sockfd)
     n = cmd_write_register(&buf32, 13, 0xc800); /* also high bits of rd_addr_end */
     n = query_response(sockfd, buf, n, buf, 0);
     /* software trigger, for testing */
-    Sleep(2);
-    n = cmd_send_pulse(&buf32, 0x08); /* pulse_reg(3) */
-    n = query_response(sockfd, buf, n, buf, 0);
+    // Sleep(2);
+    // n = cmd_send_pulse(&buf32, 0x08); /* pulse_reg(3) */
+    // n = query_response(sockfd, buf, n, buf, 0);
     
     finished = 0;
     do {
@@ -741,7 +743,7 @@ int fmc112_read_save(int sockfd)
 
         readTotal = 0;
         for(;;) {
-            tv.tv_sec  = 0;
+            tv.tv_sec  = 1;
             tv.tv_usec = 500 * 1000;
             FD_ZERO(&rfd);
             FD_SET(sockfd, &rfd);
@@ -753,6 +755,8 @@ int fmc112_read_save(int sockfd)
             }
             if(nsel == 0) {
                 warn("timed out");
+                error_printf("nb = %zd, readTotal = %zd\n\n", nb, readTotal);
+                signal_kill_handler(0);
                 break;
             }
             if(nsel>0) {
@@ -795,7 +799,7 @@ int fmc112_read_save(int sockfd)
             j=0;
             for(iCh=0; iCh<SCOPE_NCH; iCh++) {
                 if((chMask >> iCh) & 0x01) {
-                    waveformEvent.wavBuf[j * waveformAttr.nPt + iP] = (ibufsd[i]>>2);
+                    waveformEvent.wavBuf[j * waveformAttr.nPt + iP] = (ibufsd[i]);
                                                   /* lowest 2 bits are 0's for 14-bit adc data */
                     j++;
                     i++;
@@ -823,16 +827,15 @@ int main(int argc, char **argv)
     ssize_t i;
     size_t nWfmPerChunk = 1;
 
-    if(argc<6) {
-        error_printf("%s scopeAdddress scopePort outFileName chMask(0x..) nEvents nWfmPerChunk\n",
+    if(argc<7) {
+        error_printf("%s scopeAdddress scopePort outFileName chMask(0x..) avgMask nEvents nWfmPerChunk\n",
                      argv[0]);
+        error_printf("avgMask(0x..): high 4-bit is offset, 2**(low 4-bit) is number of points to average\n");
         return EXIT_FAILURE;
     }
     scopeAddress = argv[1];
     scopePort = argv[2];
     outFileName = argv[3];
-    nEvents = atol(argv[5]);
-
     errno = 0;
     chMask = strtol(argv[4], &p, 16);
     v = chMask;
@@ -846,20 +849,27 @@ int main(int argc, char **argv)
         error_printf("chMask must represent allowed 4,8,16 channel groups\n");
         return EXIT_FAILURE;
     }
-    if(argc>=7)
-        nWfmPerChunk = atol(argv[6]);
+    errno = 0;
+    avgMask = strtol(argv[5], &p, 16);
+    if(errno != 0 || *p != 0 || p == argv[5]) {
+        error_printf("Invalid avgMask input: %s\n", argv[5]);
+        return EXIT_FAILURE;
+    }
+    nEvents = atol(argv[6]);
+    if(argc>7)
+        nWfmPerChunk = atol(argv[7]);
     
-    debug_printf("outFileName: %s, chMask: 0x%02x, nCh: %zd, nEvents: %zd, nWfmPerChunk: %zd\n",
-                 outFileName, chMask, nCh, nEvents, nWfmPerChunk);
+    debug_printf("outFileName: %s, chMask: 0x%04x, nCh: %zd, avgMask: 0x%02x, nEvents: %zd, nWfmPerChunk: %zd\n",
+                 outFileName, chMask, nCh, avgMask, nEvents, nWfmPerChunk);
 
     waveformAttr.chMask  = chMask;
     waveformAttr.nPt     = SCOPE_MEM_LENGTH_MAX * (SCOPE_NCH / nCh);
     waveformAttr.nFrames = 0;
-    waveformAttr.dt      = 8.0e-9;
+    waveformAttr.dt      = 8.0e-9 * (1<<(0xf & avgMask));
     waveformAttr.t0      = 0.0;
     for(i=0; i<SCOPE_NCH; i++) {
-        /* 14bit ADC, polarity reversed, 2Vpp full scale */
-        waveformAttr.ymult[i] = -2.0 / (1<<14);
+        /* 14bit ADC, filled to high bits of 16-bit words, polarity reversed, 2Vpp full scale */
+        waveformAttr.ymult[i] = -2.0 / (1<<16);
         /* ADC outputs 2's compliment, so 0 is 0.0V */
         waveformAttr.yoff[i]  = 0.0;
         /* DAC controlled electrical offset at input */

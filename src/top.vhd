@@ -428,6 +428,25 @@ ARCHITECTURE Behavioral OF top IS
       DATA_FIFO_EMPTY : OUT std_logic
     );
   END COMPONENT;
+  COMPONENT channel_avg
+    GENERIC (
+      NCH            : positive := 16;
+      OUTCH_WIDTH    : positive := 16;
+      INTERNAL_WIDTH : positive := 20;
+      INDATA_WIDTH   : positive := 256;
+      OUTDATA_WIDTH  : positive := 256
+    );
+    PORT (
+      RESET     : IN  std_logic;
+      CLK       : IN  std_logic;
+      -- high 4-bit is offset, 2**(low 4-bit) is number of points to average    
+      CONFIG    : IN  std_logic_vector(7 DOWNTO 0);
+      TRIG      : IN  std_logic;
+      INDATA_Q  : IN  std_logic_vector(INDATA_WIDTH-1 DOWNTO 0);
+      OUTVALID  : OUT std_logic;
+      OUTDATA_Q : OUT std_logic_vector(OUTDATA_WIDTH-1 DOWNTO 0)
+    );
+  END COMPONENT;
   ---------------------------------------------> SDRAM
   ---------------------------------------------< FMC112  
   COMPONENT kc705_fmc112
@@ -660,6 +679,8 @@ ARCHITECTURE Behavioral OF top IS
   SIGNAL fmc112_data_fifo_reset            : std_logic;  
   SIGNAL fmc112_data_fifo_rdclk            : std_logic;
   SIGNAL fmc112_data_fifo_din              : std_logic_vector(255 DOWNTO 0);
+  SIGNAL fmc112_channel_avg_outdata_q      : std_logic_vector(255 DOWNTO 0);
+  SIGNAL fmc112_channel_avg_outvalid       : std_logic;
   SIGNAL fmc112_data_fifo_wren             : std_logic;
   SIGNAL fmc112_data_fifo_rden             : std_logic;
   SIGNAL fmc112_data_fifo_dout             : std_logic_vector(31 DOWNTO 0);
@@ -1167,7 +1188,7 @@ BEGIN
   status_reg(64*2+28)    <= fmc112_data_wr_busy;
   status_reg(64*2+29)    <= fmc112_data_wr_wrapped;
   --
-  channel_set_inst : channel_sel
+  channel_sel_inst : channel_sel
     PORT MAP (
       CLK             => fmc112_adc_data_clk,  -- fifo wrclk
       RESET           => reset,
@@ -1175,7 +1196,7 @@ BEGIN
       --
       DATA_FIFO_RESET => fmc112_data_fifo_reset,
       --
-      INDATA_Q        => fmc112_data_fifo_din,
+      INDATA_Q        => fmc112_channel_avg_outdata_q,
       DATA_FIFO_WREN  => fmc112_data_fifo_wren,
       DATA_FIFO_FULL  => fmc112_data_fifo_full,
       --
@@ -1185,6 +1206,19 @@ BEGIN
     );
   fmc112_idata_fifo_rden <= NOT fmc112_idata_fifo_full;
   fmc112_idata_fifo_wren <= NOT fmc112_idata_fifo_empty;
+  fmc112_data_fifo_wren  <= config_reg(32*6+31) AND fmc112_channel_avg_outvalid;
+  --
+  channel_avg_inst : channel_avg
+    PORT MAP (
+      RESET           => reset,
+      CLK             => fmc112_adc_data_clk,
+      -- high 4-bit is offset, 2**(low 4-bit) is number of points to average    
+      CONFIG          => config_reg(32*7+15 DOWNTO 32*7+8),
+      TRIG            => fmc112_data_wr_start,
+      INDATA_Q        => fmc112_data_fifo_din,
+      OUTVALID        => fmc112_channel_avg_outvalid,
+      OUTDATA_Q       => fmc112_channel_avg_outdata_q
+    );
   --
   dbg_ila_probe3(27 DOWNTO 0)               <= sdram_app_addr;
   dbg_ila_probe3(28)                        <= sdram_app_en;
@@ -1276,7 +1310,6 @@ BEGIN
     VARIABLE counter : unsigned(fmc112_data_fifo_din'length-1 DOWNTO 0) := (OTHERS => '0');
   BEGIN
     IF falling_edge(fmc112_adc_data_clk) THEN  -- register half-cycle earlier
-      fmc112_data_fifo_wren <= config_reg(32*6+31);
       -- FOR memory write continuity test
       -- fmc112_data_fifo_din <= std_logic_vector(counter);
       counter := counter + 1;
