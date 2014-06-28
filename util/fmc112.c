@@ -126,9 +126,14 @@ static int get_socket(char *host, char *port)
         if(sockfd < 0) continue;
         sockopt = 1;
         if(setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, (char*)&sockopt, sizeof(sockopt)) == -1) {
-            /* setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, (char*)&sockopt, sizeof(sockopt)) */
-            close(sockopt);
-            warn("setsockopt");
+            close(sockfd);
+            warn("setsockopt TCP_NODELAY");
+            continue;
+        }
+        sockopt = 1;
+        if(setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, (char*)&sockopt, sizeof(sockopt)) == -1) {
+            close(sockfd);
+            warn("setsockopt SO_KEEPALIVE");
             continue;
         }
         if(connect_retry(sockfd, ap->ai_addr, ap->ai_addrlen) < 0) {
@@ -161,7 +166,7 @@ static int query_response_with_timeout(int sockfd, char *queryStr, size_t nbytes
         warn("send");
         return (int)nw;
     }
-    if(nbytes_ret_exp == 0) return 0;
+    if(nbytes_ret_exp == 0) return nw;
 
     ret = 0;
     for(;;) {
@@ -173,6 +178,7 @@ static int query_response_with_timeout(int sockfd, char *queryStr, size_t nbytes
             return nsel;
         }
         if(nsel == 0) { /* timed out */
+            warn("select");
             break;
         }
         if(nsel>0 && FD_ISSET(sockfd, &rfd)) {
@@ -743,7 +749,7 @@ int fmc112_read_save(int sockfd)
 
         readTotal = 0;
         for(;;) {
-            tv.tv_sec  = 1;
+            tv.tv_sec  = 9;
             tv.tv_usec = 500 * 1000;
             FD_ZERO(&rfd);
             FD_SET(sockfd, &rfd);
@@ -754,7 +760,7 @@ int fmc112_read_save(int sockfd)
                 break;
             }
             if(nsel == 0) {
-                warn("timed out");
+                warn("select");
                 error_printf("nb = %zd, readTotal = %zd\n\n", nb, readTotal);
                 signal_kill_handler(0);
                 break;
@@ -766,11 +772,19 @@ int fmc112_read_save(int sockfd)
                     if(n < 0) {
                         warn("read");
                         break;
+                    } else if(n == 0) {
+                        warn("read: socket closed");
+                        break;
                     }
                     readTotal += n;
                 }
             }
-            if(readTotal >= NBASK) break;
+            if(readTotal >= NBASK) {
+                if(readTotal > NBASK) {
+                    error_printf("(readTotal = %zd) > (NBASK = %d)\n", readTotal, NBASK);
+                }
+                break;
+            }
         }
         nb += readTotal;
         
@@ -813,7 +827,7 @@ int fmc112_read_save(int sockfd)
     return hdf5io_write_event(waveformFile, &waveformEvent);
 #undef NBASK    
 }
-    
+
 /******************************************************************************/
 
 int main(int argc, char **argv)
