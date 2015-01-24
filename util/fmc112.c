@@ -641,19 +641,23 @@ int fmc112_prepare(int sockfd)
 
     /* select channel & average */
     switch(nCh) {
+    case 1:
+        for(val = 0x0000; (((chMask>>val) & (0x0001)) == 0) && (val<16) ; val++) {;}
+        break;
     case 4:
-        val = 0x0000;
+        val = 0x0010;
         if(chMask & 0x000f) val |= 0x0000;
         if(chMask & 0x00f0) val |= 0x0001;
         if(chMask & 0x0f00) val |= 0x0002;
         if(chMask & 0xf000) val |= 0x0003;
         break;
     case 8:
-        val = 0x0010; break;
+        val = 0x0020;
         if(chMask & 0x00ff) val |= 0x0000;
         if(chMask & 0xff00) val |= 0x0001;
+        break;
     case 16:
-        val = 0x0020; break;
+        val = 0x0030; break;
     default:
         val = 0x0000;
         break;
