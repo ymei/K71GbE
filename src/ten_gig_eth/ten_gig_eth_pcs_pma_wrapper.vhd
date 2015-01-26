@@ -7,7 +7,7 @@
 -- Description: This file is a wrapper for the 10GBASE-R core; it contains the 
 -- core support level and a few registers, including a DDR output register
 -------------------------------------------------------------------------------
--- (c) Copyright 2009 - 2013 Xilinx, Inc. All rights reserved.
+-- (c) Copyright 2009 - 2014 Xilinx, Inc. All rights reserved.
 --
 -- This file contains confidential and proprietary information
 -- of Xilinx, Inc. and is protected under U.S. and 
@@ -64,6 +64,7 @@ ENTITY ten_gig_eth_pcs_pma_wrapper IS
     refclk_n        : IN  std_logic;
     core_clk156_out : OUT std_logic;
     reset           : IN  std_logic;
+    sim_speedup_control: in std_logic := '0';
     qpll_locked     : OUT std_logic;
     xgmii_txd       : IN  std_logic_vector(63 DOWNTO 0);
     xgmii_txc       : IN  std_logic_vector(7 DOWNTO 0);
@@ -105,17 +106,16 @@ architecture wrapper of ten_gig_eth_pcs_pma_wrapper is
       refclk_n             : in  std_logic;
       core_clk156_out      : out std_logic;
       reset                : in  std_logic;
+      sim_speedup_control  : in  std_logic := '0';
       qplloutclk_out       : out std_logic;
       qplloutrefclk_out    : out std_logic;
       qplllock_out         : out std_logic;
       dclk_out             : out std_logic;            
-        
       txusrclk_out         : out std_logic;
       txusrclk2_out        : out std_logic;
       gttxreset_out        : out std_logic;
       gtrxreset_out        : out std_logic;
       txuserrdy_out        : out std_logic;
-                 
       areset_clk156_out     : out std_logic;
       reset_counter_done_out : out std_logic;
       xgmii_txd            : in  std_logic_vector(63 downto 0);
@@ -130,14 +130,12 @@ architecture wrapper of ten_gig_eth_pcs_pma_wrapper is
       signal_detect        : in  std_logic;
       tx_fault             : in  std_logic;
       tx_disable           : out std_logic;
-  
       mdc                  : in  std_logic;
       mdio_in              : in  std_logic;
       mdio_out             : out std_logic;
       mdio_tri             : out std_logic;
       prtad                : in  std_logic_vector(4 downto 0);
-                   
-  
+      pma_pmd_type         : in std_logic_vector(2 downto 0);
       core_status          : out std_logic_vector(7 downto 0)); 
   end component;
 
@@ -171,6 +169,8 @@ architecture wrapper of ten_gig_eth_pcs_pma_wrapper is
 
   signal mdio_out_int : std_logic;
   signal mdio_tri_int : std_logic;
+  signal mdc_reg     : std_logic;
+  signal mdio_in_reg : std_logic;
 
 begin
 
@@ -194,13 +194,15 @@ begin
     end if;
   end process;     
 
-  -- Add a pipeline to the mdio outputs, to aid timing closure
+  -- Add a pipeline to the mdio in/outputs, to aid timing closure
   -- This is safe since the mdio clk is running so slowly.
   mdio_outtri_reg_proc : process(clk156)
   begin
     if(clk156'event and clk156 = '1') then
       mdio_tri <= mdio_tri_int;
       mdio_out <= mdio_out_int; 
+      mdc_reg <= mdc;
+      mdio_in_reg <= mdio_in;
     end if;
   end process;  
 
@@ -211,6 +213,7 @@ begin
       refclk_n            => refclk_n,
       core_clk156_out     => clk156,
       reset               => reset,
+      sim_speedup_control => sim_speedup_control,
       qplloutclk_out      => qplloutclk_out,
       qplloutrefclk_out   => qplloutrefclk_out,
       qplllock_out        => qplllock_out,
@@ -236,11 +239,12 @@ begin
       signal_detect       => signal_detect,
       tx_fault            => tx_fault,
       tx_disable          => tx_disable,
-      mdc                 => mdc,
-      mdio_in             => mdio_in,
+      mdc                 => mdc_reg,
+      mdio_in             => mdio_in_reg,
       mdio_out            => mdio_out_int,
       mdio_tri            => mdio_tri_int,
       prtad               => prtad,
+      pma_pmd_type        => "101",
       core_status         => core_status); 
 
   qpll_locked     <= qplllock_out;

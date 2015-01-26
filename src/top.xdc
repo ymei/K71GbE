@@ -33,7 +33,7 @@ set_clock_groups -asynchronous -group [get_clocks -include_generated_clocks syst
 set_clock_groups -asynchronous -group [get_clocks -include_generated_clocks system_clock] -group [get_clocks -include_generated_clocks user_clock]
 set_clock_groups -asynchronous -group [get_clocks -include_generated_clocks user_clock] -group [get_clocks -include_generated_clocks sgmii_clock]
 # seems we ran out of bufg's
-set_property CLOCK_DEDICATED_ROUTE BACKBONE [get_nets global_clock_reset_inst/I]
+# set_property CLOCK_DEDICATED_ROUTE BACKBONE [get_nets global_clock_reset_inst/I]
 # false path of resetter
 set_false_path -from [get_pins -of_objects [get_cells -hierarchical -filter {NAME =~ *GLOBAL_RST_reg*}] -filter {NAME =~ *C}]
 
@@ -233,9 +233,10 @@ set_property IOSTANDARD  LVCMOS25 [get_ports RGMII_RX_CTL]
 set_property PACKAGE_PIN U27      [get_ports RGMII_RXC]
 set_property IOSTANDARD  LVCMOS25 [get_ports RGMII_RXC]
 
-create_clock -name rgmii_rxc_clock -period 8 [get_ports RGMII_RXC]
+# already set in ip / tri_mode_ethernet_mac_0.xdc
+# create_clock -period 8 [get_ports RGMII_RXC]
 set rx_clk_var [get_clocks -of [get_ports RGMII_RXC]]
-set_clock_groups -asynchronous -group [get_clocks -include_generated_clocks rgmii_rxc_clock] -group [get_clocks -include_generated_clocks sgmii_clock]
+set_clock_groups -asynchronous -group [get_clocks -include_generated_clocks -of_objects [get_ports RGMII_RXC]] -group [get_clocks -include_generated_clocks sgmii_clock]
 
 set_property IODELAY_GROUP tri_mode_ethernet_mac_iodelay_grp [get_cells -hier -filter {name =~ *trimac_fifo_block/trimac_sup_block/tri_mode_ethernet_mac_idelayctrl_common_i}]
 

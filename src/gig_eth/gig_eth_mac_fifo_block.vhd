@@ -158,8 +158,9 @@ entity tri_mode_ethernet_mac_0_fifo_block is
       inband_clock_speed        : out std_logic_vector(1 downto 0);
       inband_duplex_status      : out std_logic;
 
+      
       -- MDIO Interface
-      -------------------
+      -----------------
       mdio                      : inout std_logic;
       mdc                       : out std_logic;
 
@@ -263,6 +264,7 @@ architecture wrapper of tri_mode_ethernet_mac_0_fifo_block is
       inband_duplex_status       : out std_logic;
 
 
+      
       -- MDIO Interface
       -----------------
       mdio                       : inout std_logic;
@@ -461,7 +463,9 @@ begin
       inband_duplex_status  => inband_duplex_status,
 
 
+      
       -- MDIO Interface
+      -----------------
       mdio                  => mdio,
       mdc                   => mdc,
 

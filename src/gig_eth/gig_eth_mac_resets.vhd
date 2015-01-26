@@ -202,7 +202,7 @@ begin
   -----------------
   -- data check reset
     clear_checker <= glbl_rst or reset_error;
-
+  -- ymei
     --chk_reset_gen : tri_mode_ethernet_mac_0_reset_sync
     --port map (
     --  clk              => gtx_clk,

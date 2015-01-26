@@ -9,7 +9,7 @@
 --              An active reset is included with a paramterized 
 --              reset value
 -------------------------------------------------------------------------------
--- (c) Copyright 2009 - 2013 Xilinx, Inc. All rights reserved.
+-- (c) Copyright 2009 - 2014 Xilinx, Inc. All rights reserved.
 --
 -- This file contains confidential and proprietary information
 -- of Xilinx, Inc. and is protected under U.S. and 
@@ -99,6 +99,11 @@ begin
     end if;
   end process syncrst_proc;
   
-  data_out <= sync1_r(C_NUM_SYNC_REGS-1);
-  
+  outreg_proc : process(clk)
+  begin
+    if(clk'event and clk = '1') then
+      data_out <= sync1_r(C_NUM_SYNC_REGS-1);
+    end if;
+  end process outreg_proc;
+      
 end rtl;

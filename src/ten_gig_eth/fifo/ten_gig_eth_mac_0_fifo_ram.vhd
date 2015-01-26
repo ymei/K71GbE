@@ -7,7 +7,7 @@
 ----------------------------------------------------------------------------
 -- Description: BRAM used by tx and rx FIFOs
 -------------------------------------------------------------------------------
--- (c) Copyright 2004-2012 Xilinx, Inc. All rights reserved.
+-- (c) Copyright 2004-2014 Xilinx, Inc. All rights reserved.
 --
 -- This file contains confidential and proprietary information
 -- of Xilinx, Inc. and is protected under U.S. and
@@ -89,6 +89,8 @@ architecture rtl of ten_gig_eth_mac_0_fifo_ram is
    signal rd_addr_int, wr_addr_int : unsigned(ADDR_WIDTH-1 downto 0);
    signal rd_allow_int : std_logic;
    
+  attribute ram_style                  : string;
+  attribute ram_style of ram           : signal is "block";
 begin
    wr_data(63 downto 0)  <= data_in;
    wr_data(67 downto 64) <= ctrl_in;

@@ -7,7 +7,7 @@
 -- Description: This file contains the 
 -- 10GBASE-R clocking and reset logic which can be shared between multiple cores                
 -------------------------------------------------------------------------------
--- (c) Copyright 2009 - 2013 Xilinx, Inc. All rights reserved.
+-- (c) Copyright 2009 - 2014 Xilinx, Inc. All rights reserved.
 --
 -- This file contains confidential and proprietary information
 -- of Xilinx, Inc. and is protected under U.S. and 
@@ -176,7 +176,6 @@ begin
   areset_clk156       <= areset_clk156_i;  
         
   -- Asynch reset synchronizers...
-      
   areset_clk156_sync_i : ten_gig_eth_pcs_pma_0_ff_synchronizer_rst2 
     generic map(
       C_NUM_SYNC_REGS => 4,
@@ -225,7 +224,6 @@ begin
        end if;
     end if;
   end process;
-
       
   reset_proc2: process (clk156_int)
   begin
@@ -254,3 +252,6 @@ begin
   end process;
 
 end wrapper;
+
+
+

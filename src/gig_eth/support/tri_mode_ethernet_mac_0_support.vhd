@@ -128,6 +128,7 @@ entity tri_mode_ethernet_mac_0_support is
       inband_clock_speed         : out std_logic_vector(1 downto 0);
       inband_duplex_status       : out std_logic;
 
+      
       -- MDIO Interface
       -----------------
       mdio                       : inout std_logic;
@@ -232,7 +233,6 @@ architecture wrapper of tri_mode_ethernet_mac_0_support is
       -----------------
       mdio                       : inout std_logic;
       mdc                        : out std_logic;
-
       -- AXI-Lite Interface
       -----------------
       s_axi_aclk                 : in  std_logic;

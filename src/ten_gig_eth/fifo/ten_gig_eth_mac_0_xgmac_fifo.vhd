@@ -49,7 +49,7 @@
 --    read 64-bit words from this FIFO.
 --  
 -------------------------------------------------------------------------------
--- (c) Copyright 2001-2012 Xilinx, Inc. All rights reserved.
+-- (c) Copyright 2001-2014 Xilinx, Inc. All rights reserved.
 --
 -- This file contains confidential and proprietary information
 -- of Xilinx, Inc. and is protected under U.S. and
@@ -137,7 +137,7 @@ entity ten_gig_eth_mac_0_xgmac_fifo is
       tx_axis_mac_aresetn  : in  std_logic;        
       tx_axis_mac_aclk     : in  std_logic;     
       tx_axis_mac_tdata    : out std_logic_vector(63 downto 0); 
-      tx_axis_mac_tkeep    : out std_logic_vector(7 downto 0);     
+      tx_axis_mac_tkeep    : out std_logic_vector(7 downto 0);    
       tx_axis_mac_tvalid   : out std_logic;     
       tx_axis_mac_tlast    : out std_logic;
       tx_axis_mac_tready   : in  std_logic;

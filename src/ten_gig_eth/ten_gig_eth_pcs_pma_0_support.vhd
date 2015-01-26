@@ -9,7 +9,7 @@
 -- their own design, along with various components which can be shared between
 -- several block levels.
 -------------------------------------------------------------------------------
--- (c) Copyright 2009 - 2013 Xilinx, Inc. All rights reserved.
+-- (c) Copyright 2009 - 2014 Xilinx, Inc. All rights reserved.
 --
 -- This file contains confidential and proprietary information
 -- of Xilinx, Inc. and is protected under U.S. and 
@@ -61,9 +61,6 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 
-library ten_gig_eth_pcs_pma_v4_1;
-use ten_gig_eth_pcs_pma_v4_1.all;
-
 entity ten_gig_eth_pcs_pma_0_support is
   port (
     refclk_p             : in  std_logic;
@@ -71,6 +68,7 @@ entity ten_gig_eth_pcs_pma_0_support is
     core_clk156_out      : out std_logic;
     dclk_out             : out std_logic;    
     reset                : in  std_logic;
+    sim_speedup_control  : in  std_logic := '0';
     qplloutclk_out       : out std_logic;
     qplloutrefclk_out    : out std_logic;
     qplllock_out         : out std_logic;
@@ -98,6 +96,7 @@ entity ten_gig_eth_pcs_pma_0_support is
     resetdone            : out std_logic;
     signal_detect        : in  std_logic;
     tx_fault             : in  std_logic;
+    pma_pmd_type         : in  std_logic_vector(2 downto 0);
     tx_disable           : out std_logic);
 end entity ten_gig_eth_pcs_pma_0_support;
 
@@ -157,6 +156,7 @@ architecture wrapper of ten_gig_eth_pcs_pma_0_support is
      areset             : in  std_logic;
      gttxreset          : in  std_logic;
      gtrxreset          : in  std_logic;
+     sim_speedup_control: in  std_logic := '0';
      qplllock           : in  std_logic;
      qplloutclk         : in  std_logic;
      qplloutrefclk      : in  std_logic;
@@ -199,9 +199,10 @@ architecture wrapper of ten_gig_eth_pcs_pma_0_support is
 
   -- Signal declarations
   signal clk156 : std_logic;
+  signal txoutclk : std_logic;
 
   signal txclk322 : std_logic;
-  signal dclk : std_logic;
+  signal dclk_i  : std_logic;
   signal drp_req : std_logic;
   signal drp_gnt : std_logic;
   signal drp_den_o   : std_logic;                                   
@@ -250,7 +251,7 @@ begin
   qplloutclk_out <= qplloutclk;
   qplloutrefclk_out <= qplloutrefclk;
   qplllock_out <= qplllock;
-  dclk_out <= dclk;
+  dclk_out <= dclk_i;
   txusrclk_out <= txusrclk;
   txusrclk2_out <= txusrclk2;
   areset_clk156_out      <= areset_clk156;
@@ -286,7 +287,7 @@ begin
      refclk              => refclk,
      clk156              => clk156,
      txclk322            => txclk322,
-     dclk                => dclk,
+     dclk                => dclk_i,
      qplllock            => qplllock,
      areset_clk156       => areset_clk156,
      gttxreset           => gttxreset,
@@ -304,7 +305,7 @@ begin
   port map
   (
      clk156              => clk156,
-     dclk                => dclk,
+     dclk                => dclk_i,
      txusrclk            => txusrclk,
      txusrclk2           => txusrclk2,
      txclk322            => txclk322,
@@ -313,6 +314,7 @@ begin
      areset              => reset,
      gttxreset           => gttxreset,
      gtrxreset           => gtrxreset,
+     sim_speedup_control => sim_speedup_control,
      qplllock            => qplllock,
      qplloutclk          => qplloutclk,
      qplloutrefclk       => qplloutrefclk,
@@ -349,7 +351,7 @@ begin
       drp_di_i            => drp_di_i, 
       drp_drdy_i          => drp_drdy_i,                
       drp_drpdo_i         => drp_drpdo_i,
-     pma_pmd_type        => "101",
+     pma_pmd_type        => pma_pmd_type,
      tx_disable          => tx_disable
    );
 

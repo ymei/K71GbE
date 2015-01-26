@@ -75,7 +75,9 @@ entity tri_mode_ethernet_mac_0_axi_lite_sm is
       update_speed                     : in  std_logic;
       serial_command                   : in  std_logic;
       serial_response                  : out std_logic;
+   
       phy_loopback                     : in  std_logic;
+      
 
       s_axi_awaddr                     : out std_logic_vector(11 downto 0) := (others => '0');
       s_axi_awvalid                    : out std_logic := '0';
@@ -119,6 +121,7 @@ architecture rtl of tri_mode_ethernet_mac_0_axi_lite_sm is
    -- Encoded main state machine states.
    type state_typ is         (STARTUP,
                               CHANGE_SPEED,
+                              
                               MDIO_RD,
                               MDIO_POLL_CHECK,
                               MDIO_1G,
@@ -133,6 +136,7 @@ architecture rtl of tri_mode_ethernet_mac_0_axi_lite_sm is
                               MDIO_LOOPBACK,
                               MDIO_STATS,
                               MDIO_STATS_POLL_CHECK,
+                              
                               RESET_MAC_RX,
                               RESET_MAC_TX,
                               CNFG_MDIO,
@@ -143,6 +147,7 @@ architecture rtl of tri_mode_ethernet_mac_0_axi_lite_sm is
                               CNFG_HI_ADDR,
                               CHECK_SPEED);
 
+   
    -- MDIO State machine
    type mdio_state_typ is    (IDLE,
                               SET_DATA,
@@ -156,8 +161,10 @@ architecture rtl of tri_mode_ethernet_mac_0_axi_lite_sm is
                               DONE);
 
 
+   
    -- Management configuration register address     (0x500)
    constant CONFIG_MANAGEMENT_ADD  : std_logic_vector(16 downto 0) := "00000" & X"500";
+   
 
    -- Flow control configuration register address   (0x40C0)
    constant CONFIG_FLOW_CTRL_ADD   : std_logic_vector(16 downto 0) := "00000" & X"40C";
@@ -181,6 +188,7 @@ architecture rtl of tri_mode_ethernet_mac_0_axi_lite_sm is
    constant CONFIG_ADDR_CTRL_ADD   : std_logic_vector(16 downto 0) := "00000" & X"708";
    
 
+   
    -- MDIO registers
    constant MDIO_CONTROL           : std_logic_vector(16 downto 0) := "00000" & X"504";
    constant MDIO_TX_DATA           : std_logic_vector(16 downto 0) := "00000" & X"508";
@@ -188,6 +196,8 @@ architecture rtl of tri_mode_ethernet_mac_0_axi_lite_sm is
    constant MDIO_OP_RD             : std_logic_vector(1 downto 0) := "10";
    constant MDIO_OP_WR             : std_logic_vector(1 downto 0) := "01";
 
+
+   
    -- PHY Registers
    -- phy address is actually a 6 bit field but other bits are reserved so simpler to specify as 8 bit
    constant PHY_ADDR               : std_logic_vector(7 downto 0) := X"07";
@@ -202,20 +212,27 @@ architecture rtl of tri_mode_ethernet_mac_0_axi_lite_sm is
    ---------------------------------------------------
    -- Signal declarations
    signal axi_status               : std_logic_vector(4 downto 0);   -- used to keep track of axi transactions
+   
    signal mdio_ready               : std_logic;                      -- captured to acknowledge the end of mdio transactions
+   
    signal axi_rd_data              : std_logic_vector(31 downto 0);
    signal axi_wr_data              : std_logic_vector(31 downto 0);
+   
    signal mdio_wr_data             : std_logic_vector(31 downto 0);
+   
 
    signal axi_state                : state_typ;                      -- main state machine to configure example design
+   
    signal mdio_access_sm           : mdio_state_typ;                 -- mdio state machine to handle mdio register config
    signal axi_access_sm            : axi_state_typ;                  -- axi state machine - handles the 5 channels
 
    signal start_access             : std_logic;                      -- used to kick the axi acees state machine
+   
    signal start_mdio               : std_logic;                      -- used to kick the mdio state machine
    signal drive_mdio               : std_logic;                      -- selects between mdio fields and direct sm control
    signal mdio_op                  : std_logic_vector(1 downto 0);
    signal mdio_reg_addr            : std_logic_vector(7 downto 0);
+   
    signal writenread               : std_logic;
    signal addr                     : std_logic_vector(16 downto 0);
    signal speed                    : std_logic_vector(1 downto 0);
@@ -256,13 +273,12 @@ begin
    speedis10  <= '1' when speed = "00" else '0';
    speedis100 <= '1' when speed = "01" else '0';
 
-   --update_speed_sync_inst :tri_mode_ethernet_mac_0_sync_block
-   --port map (
-   --   clk              => s_axi_aclk,
-   --   data_in          => update_speed,
-   --   data_out         => update_speed_sync
-   --);
-   update_speed_sync <= update_speed;
+   update_speed_sync_inst :tri_mode_ethernet_mac_0_sync_block
+   port map (
+      clk              => s_axi_aclk,
+      data_in          => update_speed,
+      data_out         => update_speed_sync
+   );
 
    update_reg : process (s_axi_aclk)
    begin
@@ -287,20 +303,25 @@ begin
          if s_axi_reset = '1' then
             axi_state      <= STARTUP;
             start_access   <= '0';
+   
             start_mdio     <= '0';
             drive_mdio     <= '0';
             mdio_op        <= (others => '0');
             mdio_reg_addr  <= (others => '0');
+            
             writenread     <= '0';
             addr           <= (others => '0');
             axi_wr_data    <= (others => '0');
             speed          <= mac_speed;
          -- main state machine is kicking off multi cycle accesses in each state so has to
          -- stall while they take place
+   
          elsif axi_access_sm = IDLE_A and mdio_access_sm = IDLE and start_access = '0' and start_mdio = '0' then
+         
             case axi_state is
                when STARTUP =>
                   -- this state will be ran after reset to wait for count_shift
+                  
                   if (count_shift(20) = '0') then
                      -- set up MDC frequency. Write 2E to Management configuration
                      -- register (Add=340). This will enable MDIO and set MDC to 2.5MHz
@@ -316,18 +337,23 @@ begin
                      axi_wr_data    <= X"00000068";
                      axi_state      <= CHANGE_SPEED;
                   end if;
+                  
                when CHANGE_SPEED =>
                   -- program the MAC to the required speed
                   assert false
                     report "Programming MAC speed" & cr
                     severity note;
-                  drive_mdio     <= '0';
-                  start_access   <= '1';
-                  writenread     <= '1';
-                  addr           <= SPEED_CONFIG_ADD;
+                  drive_mdio      <= '0';
+                  
+                  start_access    <= '1';
+                  writenread      <= '1';
+                  addr            <= SPEED_CONFIG_ADD;
                   -- bits 31:30 are used
-                  axi_wr_data    <= speed & X"0000000" & "00";
-                  axi_state      <= MDIO_RD;
+                  axi_wr_data     <= speed & X"0000000" & "00";
+   
+                  axi_state       <= MDIO_RD;
+                  
+   
                when MDIO_RD =>
                   -- read phy status - if response is all ones then do not perform any
                   -- further MDIO accesses
@@ -466,12 +492,13 @@ begin
                   end if;
 
                -- once here the PHY is ACTIVE - NOTE only IEEE registers are used
-
                when RESET_MAC_RX =>
                   assert false
                     report "Reseting MAC RX" & cr
                     severity note;
+                  
                   drive_mdio     <= '0';
+                  
                   start_access   <= '1';
                   writenread     <= '1';
                   addr           <= RECEIVER_ADD;
@@ -485,7 +512,10 @@ begin
                   writenread     <= '1';
                   addr           <= TRANSMITTER_ADD;
                   axi_wr_data    <= X"90000000";
+                  
                   axi_state      <= CNFG_MDIO;
+                  
+                  
                when CNFG_MDIO =>
                   -- set up MDC frequency. Write 2E to Management configuration
                   -- register (Add=340). This will enable MDIO and set MDC to 2.5MHz
@@ -557,12 +587,15 @@ begin
             end case;
          else
             start_access <= '0';
+            
             start_mdio   <= '0';
+            
          end if;
       end if;
    end process gen_state;
 
 
+   
    --------------------------------------------------
    -- MDIO setup - split from main state machine to make more manageable
 
@@ -611,6 +644,7 @@ begin
          else
             case axi_access_sm is
                when IDLE_A =>
+   
                   if start_access = '1' or start_mdio = '1' or mdio_access_sm /= IDLE then
                      if mdio_access_sm = POLL then
                         axi_access_sm <= READ;
@@ -647,6 +681,7 @@ begin
       if s_axi_aclk'event and s_axi_aclk = '1' then
          if axi_access_sm = READ then
             if axi_status(0) = '0' then
+               
                if drive_mdio = '1' then
                   s_axi_araddr   <= MDIO_RX_DATA(11 downto 0);
                else
@@ -678,14 +713,17 @@ begin
                   axi_status(1) <= '1';
                   s_axi_rready_int  <= '0';
                   axi_rd_data   <= s_axi_rdata;
+                  
                   if drive_mdio = '1' and s_axi_rdata(16) = '1' then
                      mdio_ready <= '1';
                   end if;
+                  
                end if;
             end if;
          else
             s_axi_rready_int  <= '0';
             axi_status(1)     <= '0';
+            
             if axi_access_sm = IDLE_A  and (start_access = '1' or start_mdio = '1') then
                mdio_ready     <= '0';
                axi_rd_data   <= (others => '0');
@@ -730,11 +768,13 @@ begin
       if s_axi_aclk'event and s_axi_aclk = '1' then
          if axi_access_sm = WRITE then
             if axi_status(3) = '0' then
+               
                if drive_mdio = '1' then
                   s_axi_wdata   <= mdio_wr_data;
                else
                   s_axi_wdata   <= axi_wr_data;
                end if;
+               
                s_axi_wvalid_int  <= '1';
                if s_axi_wready = '1' and s_axi_wvalid_int = '1' then
                   axi_status(3)    <= '1';

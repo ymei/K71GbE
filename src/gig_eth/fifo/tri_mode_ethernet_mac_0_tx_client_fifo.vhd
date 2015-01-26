@@ -419,10 +419,10 @@ begin
            data_count <= (others => '0') after dly;
         else
            if wr_sof_pipe(1) = '1' then
-              data_count <= (others => '0');
+              data_count <= (others => '0') after dly;
            else
               if data_count(3 downto 2) /= "11" then
-                 data_count <= data_count + "0001";
+                 data_count <= data_count + "0001" after dly;
               end if;
            end if;
         end if;
@@ -1149,7 +1149,7 @@ end generate gen_hd_count;
       if tx_fifo_reset = '1' then
         wr_frames_in_fifo <= '0' after dly;
       else
-        if wr_frames >= "0000000010" then
+        if wr_frames >= "000000010" then
           wr_frames_in_fifo <= '1' after dly;
         else
           wr_frames_in_fifo <= '0' after dly;
@@ -1627,8 +1627,8 @@ gen_fd_ovflow : if (FULL_DUPLEX_ONLY = TRUE) generate
                              else '0';
 
      -- Tie off unused half-duplex signals
-     wr_col_window_pipe(0) <= '0';
-     wr_col_window_pipe(1) <= '0';
+     wr_col_window_pipe(0) <= '0' after dly;
+     wr_col_window_pipe(1) <= '0' after dly;
 
 end generate gen_fd_ovflow;
 
