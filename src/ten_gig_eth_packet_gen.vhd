@@ -99,6 +99,7 @@ ARCHITECTURE Behavioral OF ten_gig_eth_packet_gen IS
   SIGNAL pktCtr             : unsigned(47 DOWNTO 0) := (OTHERS => '0');
   --
   SIGNAL data_bram_addr_max : std_logic_vector(NBURST_WIDTH+3-1 DOWNTO 0);
+  SIGNAL pkt_mem_wea        : std_logic_vector(0 DOWNTO 0);
 
 BEGIN
 
@@ -108,13 +109,14 @@ BEGIN
   tge_packet_ram_inst : ten_gig_eth_packet_ram
     PORT MAP (
       CLKA  => pkt_mem_clk_i,
-      WEA   => (OTHERS => PKT_MEM_WE),
+      WEA   => pkt_mem_wea,
       ADDRA => PKT_MEM_ADDR(11 DOWNTO 0),
       DINA  => PKT_MEM_D,
       CLKB  => clk_i,
       ADDRB => pkt_mem_addrb_i,
       DOUTB => pkt_mem_doutb_i
     );
+  pkt_mem_wea <= (OTHERS => PKT_MEM_WE);
 
   PROCESS (clk_i) IS
   BEGIN

@@ -36,7 +36,7 @@ END sdram_buffer_fifo_tb;
 
 ARCHITECTURE Behavioral OF sdram_buffer_fifo_tb IS
 
-  CONSTANT INDATA_WIDTH   : positive := 128;
+  CONSTANT INDATA_WIDTH   : positive := 256;
   CONSTANT OUTDATA_WIDTH  : positive := 32;
   CONSTANT APP_ADDR_WIDTH : positive := 5;
   CONSTANT APP_DATA_WIDTH : positive := 512;
@@ -69,6 +69,7 @@ ARCHITECTURE Behavioral OF sdram_buffer_fifo_tb IS
       APP_RD_DATA_END    : IN  std_logic;
       APP_RD_DATA_VALID  : IN  std_logic;
       --
+      CTRL_RESET         : IN  std_logic;
       WR_START           : IN  std_logic;
       WR_ADDR_BEGIN      : IN  std_logic_vector(APP_ADDR_WIDTH-1 DOWNTO 0);
       WR_STOP            : IN  std_logic;
@@ -112,6 +113,7 @@ ARCHITECTURE Behavioral OF sdram_buffer_fifo_tb IS
   SIGNAL APP_RD_DATA_END    : std_logic;
   SIGNAL APP_RD_DATA_VALID  : std_logic := '0';
   --
+  SIGNAL CTRL_RESET         : std_logic := '0';
   SIGNAL WR_START           : std_logic := '0';
   SIGNAL WR_ADDR_BEGIN      : std_logic_vector(APP_ADDR_WIDTH-1 DOWNTO 0);
   SIGNAL WR_STOP            : std_logic := '0';
@@ -169,6 +171,7 @@ BEGIN
       APP_RD_DATA_END    => APP_RD_DATA_END,
       APP_RD_DATA_VALID  => APP_RD_DATA_VALID,
       --
+      CTRL_RESET         => CTRL_RESET,
       WR_START           => WR_START,
       WR_ADDR_BEGIN      => WR_ADDR_BEGIN,
       WR_STOP            => WR_STOP,

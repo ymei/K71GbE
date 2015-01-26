@@ -171,6 +171,8 @@ ARCHITECTURE Behavioral OF sdram_buffer_fifo IS
   SIGNAL outdata_fifo1_dout     : std_logic_vector(127 DOWNTO 0);
   SIGNAL outdata_fifo1_empty    : std_logic;
   --
+  SIGNAL fifo_rst               : std_logic;
+  --
   TYPE read_state_type IS (R0, R1, R2, R3, R4);
   SIGNAL read_state             : read_state_type  := R0;
   TYPE write_state_type IS (W0, W1, W2, W3, W4);
@@ -203,9 +205,11 @@ ARCHITECTURE Behavioral OF sdram_buffer_fifo IS
   
 BEGIN
 
+  fifo_rst <= RESET OR DATA_FIFO_RESET;
+
   indata_fifo : fifo256to512            -- FWFT
   PORT MAP (
-    RST    => RESET OR DATA_FIFO_RESET,
+    RST    => fifo_rst,
     WR_CLK => INDATA_FIFO_WRCLK,
     RD_CLK => indata_fifo_rdclk,
     DIN    => INDATA_FIFO_Q,
@@ -222,7 +226,7 @@ BEGIN
   -- Output FIFO, 2 glued together ---------------------------------------------
   outdata_fifo1 : fifo512to128          -- FWFT
   PORT MAP (
-    RST    => RESET OR DATA_FIFO_RESET,
+    RST    => fifo_rst,
     WR_CLK => CLK,
     RD_CLK => CLK,
     DIN    => APP_RD_DATA,
@@ -234,7 +238,7 @@ BEGIN
   );
   outdata_fifo0 : fifo128to32           -- FWFT
   PORT MAP (
-    RST        => RESET OR DATA_FIFO_RESET,
+    RST        => fifo_rst,
     WR_CLK     => CLK,
     RD_CLK     => OUTDATA_FIFO_RDCLK,
     DIN        => outdata_fifo0_din,

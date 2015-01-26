@@ -151,7 +151,8 @@ ARCHITECTURE Behavioral OF sdram_buffer IS
   SIGNAL indata_fifo_prog_empty : std_logic;
   --
   SIGNAL bram_clka              : std_logic;
-  SIGNAL bram_wea               : std_logic;
+  SIGNAL bram_wea               : std_logic_vector(0 DOWNTO 0);
+  SIGNAL bram_we                : std_logic;
   SIGNAL bram_addra             : std_logic_vector(7 DOWNTO 0);
   SIGNAL bram_dina              : std_logic_vector(511 DOWNTO 0);
 
@@ -192,13 +193,14 @@ BEGIN
   sdram_buffer_bram_inst : sdram_buffer_bram
     PORT MAP (
       CLKA  => bram_clka,
-      WEA   => (OTHERS => bram_wea),
+      WEA   => bram_wea,
       ADDRA => bram_addra,
       DINA  => bram_dina,
       CLKB  => OUTDATA_BRAM_CLKB,
       ADDRB => OUTDATA_BRAM_ADDRB,
       DOUTB => OUTDATA_BRAM_DOUTB
     );
+  bram_wea <= (OTHERS => bram_we);
   PROCESS (bram_clka)
   BEGIN
     IF falling_edge(bram_clka) THEN
@@ -397,7 +399,7 @@ BEGIN
     IF RESET = '1' THEN
       read_data_state <= R0;
     ELSIF falling_edge(CLK) THEN 
-      bram_wea        <= '0';
+      bram_we         <= '0';
       read_data_state <= R0;
       CASE read_data_state IS
         WHEN R0 =>
@@ -411,7 +413,7 @@ BEGIN
         WHEN R1 =>
           read_data_state <= R1;
           IF APP_RD_DATA_VALID = '1' THEN
-            bram_wea      <= '1';
+            bram_we       <= '1';
             bram_addra    <= std_logic_vector(unsigned(bram_addra)+1);
             burst_counter := burst_counter - 1;
           END IF;
