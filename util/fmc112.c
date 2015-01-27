@@ -863,7 +863,7 @@ int main(int argc, char **argv)
         error_printf("Invalid chMask input: %s\n", argv[4]);
         return EXIT_FAILURE;
     }
-    if((nCh!=4) && (nCh!=8) && (nCh!=16)) {
+    if((nCh!=1) && (nCh!=4) && (nCh!=8) && (nCh!=16)) {
         error_printf("chMask must represent allowed 4,8,16 channel groups\n");
         return EXIT_FAILURE;
     }
