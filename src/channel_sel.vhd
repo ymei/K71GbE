@@ -96,6 +96,8 @@ ARCHITECTURE Behavioral OF channel_sel IS
 
   SIGNAL indata_q_i        : std_logic_vector(INDATA_WIDTH-1 DOWNTO 0);
   --
+  SIGNAL fifo_rst          : std_logic;
+  --
   SIGNAL fifo16_indata_q   : std_logic_vector(15 DOWNTO 0);
   SIGNAL fifo16_indata_q1  : std_logic_vector(63 DOWNTO 0);  
   SIGNAL fifo16_wren       : std_logic := '0';
@@ -125,10 +127,11 @@ ARCHITECTURE Behavioral OF channel_sel IS
 
 BEGIN
 
+  fifo_rst <= RESET OR DATA_FIFO_RESET;
   -- 16 bit in 256 bit out FIFO, 2 glued together ---------------------------------------------
   fifo16 : fifo16to64                   -- FWFT
     PORT MAP (
-      RST    => RESET OR DATA_FIFO_RESET,
+      RST    => fifo_rst,
       WR_CLK => CLK,
       RD_CLK => CLK,
       DIN    => fifo16_indata_q,
@@ -140,7 +143,7 @@ BEGIN
     );
   fifo16_64 : fifo64to256               -- FWFT
     PORT MAP (
-      RST    => RESET OR DATA_FIFO_RESET,
+      RST    => fifo_rst,
       WR_CLK => CLK,
       RD_CLK => CLK,
       DIN    => fifo16_indata_q1,
@@ -157,7 +160,7 @@ BEGIN
   
   fifo64 : fifo64to256                  -- FWFT
     PORT MAP (
-      RST    => RESET OR DATA_FIFO_RESET,
+      RST    => fifo_rst,
       WR_CLK => CLK,
       RD_CLK => CLK,
       DIN    => fifo64_indata_q,
@@ -170,7 +173,7 @@ BEGIN
 
   fifo128 : fifo128to256                -- FWFT
     PORT MAP (
-      RST    => RESET OR DATA_FIFO_RESET,
+      RST    => fifo_rst,
       WR_CLK => CLK,
       RD_CLK => CLK,
       DIN    => fifo128_indata_q,

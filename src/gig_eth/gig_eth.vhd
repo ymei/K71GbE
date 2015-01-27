@@ -643,6 +643,10 @@ architecture wrapper of gig_eth is
   SIGNAL tx_fifo_rden  : std_logic;
   SIGNAL tx_fifo_empty : std_logic;
 
+  --
+  SIGNAL connection_reset_v  : std_logic_vector((NTCPSTREAMS-1) DOWNTO 0);
+  SIGNAL tcp_tx_data_valid_v : std_logic_vector((NTCPSTREAMS-1) DOWNTO 0);
+  
   ------------------------------------------------------------------------------
   -- Begin architecture
   ------------------------------------------------------------------------------
@@ -867,6 +871,8 @@ begin
    tcp_tx_data_slv8x(0) <= tcp_tx_data;
    tcp_tx_cts           <= tcp_tx_cts_vector(0);
    tcp_rx_data_valid    <= tcp_rx_data_valid_vector(0);
+   connection_reset_v   <= (OTHERS => tcp_connection_reset);
+   tcp_tx_data_valid_v  <= (OTHERS => tcp_tx_data_valid);
    tcp_server_inst : COM5402
      GENERIC MAP (
        CLK_FREQUENCY   => 125,
@@ -902,7 +908,7 @@ begin
        -- Natural order (MSB) 172.16.1.128 (LSB) as transmitted in the IP frame.
 
        --// User-initiated connection reset for stream I
-       CONNECTION_RESET => (OTHERS => tcp_connection_reset),
+       CONNECTION_RESET => connection_reset_v,
 
        --//-- Protocol -> Transmit MAC Interface
        -- 32-bit CRC is automatically appended by the MAC layer. User should not supply it.
@@ -978,7 +984,7 @@ begin
        --//-- Application -> TCP tx
        -- NTCPSTREAMS can operate independently and concurrently. No scheduling arbitration needed here.
        TCP_TX_DATA       => tcp_tx_data_slv8x,
-       TCP_TX_DATA_VALID => (OTHERS => tcp_tx_data_valid),
+       TCP_TX_DATA_VALID => tcp_tx_data_valid_v,
        TCP_TX_CTS        => tcp_tx_cts_vector,
        -- Clear To Send = transmit flow control. 
        -- App is responsible for checking the CTS signal before sending APP_DATA

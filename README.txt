@@ -14,13 +14,14 @@ Mode switch: M2 M1 M0
 -------------------------------------------------------------------------------
 rgmii IDELAY_VALUE (.xdc) affects the 1gig ethernet reliability
 
-With Vivado 2013.4, values 10 and 30 both work, but 20 doesn't.
+With Vivado 2013.4 and 2014.4, values 10 and 30 both work, but 20 doesn't.
+Value 10 seems to work the best.
 
 RGMII_RXD[*] , RGMII_RX_CTL to RGMII_RXC
 
 IDELAY_VALUE  | Total delay | Setup Slack
 30              4 ns          -1.13 ns
-10                             0.8  ns    <- did not violate timing constraints
+10              2 ns           0.8  ns    <- did not violate timing constraints
 -------------------------------------------------------------------------------
 MIG parameters:
 
