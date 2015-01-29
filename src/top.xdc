@@ -1,3 +1,7 @@
+# KC705 configuration
+set_property CFGBVS VCCO [current_design]
+set_property CONFIG_VOLTAGE 2.5 [current_design]
+
 # 200MHz onboard diff clock
 create_clock -name system_clock -period 5.0 [get_ports {SYS_CLK_P}]
 # 156.25MHz
@@ -405,8 +409,6 @@ set_property IODELAY_GROUP fmc112_iodelay_grp [get_cells -hier -filter {name =~ 
 # false paths
 set_false_path -from [get_pins -of_objects [get_cells -hierarchical -filter {NAME =~ *p2p_trigger_inst*outreset_reg}] -filter {NAME =~ *C}]
 set_false_path -from [get_pins -of_objects [get_cells -hierarchical -filter {NAME =~ *pulse2pulse*outreset_reg}] -filter {NAME =~ *C}]
-set_false_path -from [get_pins -of_objects [get_cells -hierarchical -filter {NAME =~ *fmc112_trig_prev1_reg}] -filter {NAME =~ *C}]
-set_false_path -from [get_pins -of_objects [get_cells -hierarchical -filter {NAME =~ *fmc112_trig_prev2_reg}] -filter {NAME =~ *C}]
 set_false_path -to [get_pins -of_objects [get_cells -hierarchical -filter {NAME =~ *channel_avg_inst*trig_prev_reg}] -filter {NAME =~ *D}]
 
 #>-- FMC112 -->

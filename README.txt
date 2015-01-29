@@ -37,4 +37,7 @@ Reference Clock: no buffer
 DCI Cascade (check)
 reset active high
 -------------------------------------------------------------------------------
+In Vivado 2014.4, placing sophisticated PROCESS etc. in the top module doesn't
+seem to work well.  Those logics get trimmed wildly.  Place them in modules
+instead.
 

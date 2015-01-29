@@ -106,6 +106,7 @@ port (
    clk_to_fpga_n                           : in    std_logic;
    ext_trigger_p                           : in    std_logic;
    ext_trigger_n                           : in    std_logic;
+   ext_trigger                             : out   std_logic;
    outa_p                                  : in    std_logic_vector(11 downto 0);
    outa_n                                  : in    std_logic_vector(11 downto 0);
    outb_p                                  : in    std_logic_vector(11 downto 0);
@@ -175,6 +176,7 @@ port (
   clk_to_fpga_n    : in    std_logic;
   ext_trigger_p    : in    std_logic;
   ext_trigger_n    : in    std_logic;
+  ext_trigger      : out   std_logic;
 
   dco_p            : in    std_logic_vector(2 downto 0);
   dco_n            : in    std_logic_vector(2 downto 0);
@@ -234,6 +236,7 @@ port map (
   clk_to_fpga_n   => clk_to_fpga_n,
   ext_trigger_p   => ext_trigger_p,
   ext_trigger_n   => ext_trigger_n,
+  ext_trigger     => ext_trigger,
   dco_p           => dco_p,
   dco_n           => dco_n,
   frame_p         => frame_p,

@@ -7,8 +7,8 @@
 -- Design Name:    K710GbE
 -- Module Name:    top - Behavioral 
 -- Project Name:
--- Target Devices: Kintex-7 XC7K325T-FFG900-2 (KC705 eval board)
--- Tool versions:  Vivado 2013.4
+-- Target Devices: Kintex-7 XC7K325T-FFG900-2 (KC705 1.1 eval board)
+-- Tool versions:  Vivado 2014.4
 -- Description: 
 --
 -- Dependencies: 
@@ -52,7 +52,7 @@ ENTITY top IS
     USER_SMA_CLOCK_P : OUT   std_logic;
     USER_SMA_CLOCK_N : OUT   std_logic;
     USER_SMA_GPIO_P  : OUT   std_logic;
-    USER_SMA_GPIO_N  : IN    std_logic;
+    USER_SMA_GPIO_N  : OUT   std_logic;
     -- UART via usb
     USB_RX           : OUT   std_logic;
     USB_TX           : IN    std_logic;
@@ -471,6 +471,7 @@ ARCHITECTURE Behavioral OF top IS
       CLK_TO_FPGA_N_1 : IN    std_logic;
       EXT_TRIGGER_P_1 : IN    std_logic;
       EXT_TRIGGER_N_1 : IN    std_logic;
+      EXT_TRIGGER     : OUT   std_logic;
       OUTA_P_1        : IN    std_logic_vector(11 DOWNTO 0);
       OUTA_N_1        : IN    std_logic_vector(11 DOWNTO 0);
       OUTB_P_1        : IN    std_logic_vector(11 DOWNTO 0);
@@ -505,6 +506,17 @@ ARCHITECTURE Behavioral OF top IS
       PULSEIN  : IN  std_logic;
       INBUSY   : OUT std_logic;
       PULSEOUT : OUT std_logic
+    );
+  END COMPONENT;
+  COMPONENT edge_sync IS
+    GENERIC (
+      EDGE : std_logic := '1'  -- '1'  :  rising edge,  '0' falling edge
+    );
+    PORT (
+      RESET : IN  std_logic;
+      CLK   : IN  std_logic;
+      EI    : IN  std_logic;
+      SO    : OUT std_logic
     );
   END COMPONENT;
   ---------------------------------------------> FMC112
@@ -550,6 +562,28 @@ ARCHITECTURE Behavioral OF top IS
       PERIOD : IN  std_logic_vector(COUNTER_WIDTH-1 DOWNTO 0);
       I      : IN  std_logic;
       O      : OUT std_logic
+    );
+  END COMPONENT;
+  COMPONENT clk_div IS
+    GENERIC (
+      WIDTH : positive := 16;
+      PBITS : positive := 4             -- log2(WIDTH)
+    );
+    PORT (
+      RESET   : IN  std_logic;
+      CLK     : IN  std_logic;
+      DIV     : IN  std_logic_vector(PBITS-1 DOWNTO 0);
+      CLK_DIV : OUT std_logic
+    );
+  END COMPONENT;
+  COMPONENT clk_fwd
+    GENERIC (
+      INV : boolean := false
+    );
+    PORT (
+      R : IN  std_logic;
+      I : IN  std_logic;
+      O : OUT std_logic
     );
   END COMPONENT;
 
@@ -664,6 +698,7 @@ ARCHITECTURE Behavioral OF top IS
   SIGNAL fmc112_cmd_in                     : std_logic_vector(63 DOWNTO 0);
   SIGNAL fmc112_cmd_in_val                 : std_logic;
   SIGNAL fmc112_adc_data_clk               : std_logic;
+  SIGNAL fmc112_adc_refout_clkdiv          : std_logic;
   SIGNAL fmc112_adc_data0                  : std_logic_vector(15 DOWNTO 0);
   SIGNAL fmc112_adc_data1                  : std_logic_vector(15 DOWNTO 0);
   SIGNAL fmc112_adc_data2                  : std_logic_vector(15 DOWNTO 0);
@@ -691,12 +726,8 @@ ARCHITECTURE Behavioral OF top IS
   SIGNAL fmc112_idata_fifo_rden            : std_logic;
   SIGNAL fmc112_idata_fifo_full            : std_logic;
   SIGNAL fmc112_idata_fifo_empty           : std_logic;
-  SIGNAL fmc112_ctrl_1                     : std_logic_vector(7 DOWNTO 0);
   SIGNAL fmc112_trig_allow                 : std_logic;
   SIGNAL fmc112_trig_in                    : std_logic;
-  SIGNAL fmc112_trig_prev                  : std_logic;
-  SIGNAL fmc112_trig_prev1                 : std_logic;
-  SIGNAL fmc112_trig_prev2                 : std_logic;
   SIGNAL fmc112_trig_synced                : std_logic;
   SIGNAL fmc112_data_wr_start              : std_logic;
   SIGNAL fmc112_data_wr_busy               : std_logic;  
@@ -1249,11 +1280,12 @@ BEGIN
       --STAR sip_fmc_ct_gen, ID=0 (ext_fmc_ct_gen)
       TRIG_OUT_0      => TRIG_OUT_0,
       --STAR sip_fmc112, ID=1 (ext_fmc112)
-      CTRL_1          => fmc112_ctrl_1,
+      CTRL_1          => CTRL_1,
       CLK_TO_FPGA_P_1 => CLK_TO_FPGA_P_1,
       CLK_TO_FPGA_N_1 => CLK_TO_FPGA_N_1,
       EXT_TRIGGER_P_1 => EXT_TRIGGER_P_1,
       EXT_TRIGGER_N_1 => EXT_TRIGGER_N_1,
+      EXT_TRIGGER     => fmc112_trig_in,
       OUTA_P_1        => OUTA_P_1,
       OUTA_N_1        => OUTA_N_1,
       OUTB_P_1        => OUTB_P_1,
@@ -1279,9 +1311,7 @@ BEGIN
       PHY_OUT_DATA10  => fmc112_adc_data10,
       PHY_OUT_DATA11  => fmc112_adc_data11
     );
-  CTRL_1         <= fmc112_ctrl_1;
-  fmc112_trig_in <= fmc112_ctrl_1(7);
-  fmc112_cmd_in  <= config_reg(64*2-1 DOWNTO 64*1);  
+  fmc112_cmd_in <= config_reg(64*2-1 DOWNTO 64*1);
   fmc112_cmd_in_val_sync : pulse2pulse
     PORT MAP (
       IN_CLK   => control_clk,
@@ -1305,35 +1335,30 @@ BEGIN
                           & fmc112_adc_data6  & fmc112_adc_data5  & fmc112_adc_data4
                           & fmc112_adc_data3  & fmc112_adc_data2  & fmc112_adc_data1
                           & fmc112_adc_data0;
+  -- clock output
+  refout_clk_div_inst : clk_div
+    PORT MAP (
+      RESET   => reset,
+      CLK     => fmc112_adc_data_clk,
+      DIV     => x"2",
+      CLK_DIV => fmc112_adc_refout_clkdiv
+    );
+  clk_fwd_inst  : clk_fwd
+    PORT MAP (R=>reset, I=>fmc112_adc_refout_clkdiv, O=>USER_SMA_CLOCK_P);
+  clk_fwd_inst1 : clk_fwd GENERIC MAP (INV=>true)
+    PORT MAP (R=>reset, I=>fmc112_adc_refout_clkdiv, O=>USER_SMA_CLOCK_N);
+  clk_fwd_inst2 : clk_fwd GENERIC MAP (INV=>true)
+    PORT MAP (R=>reset, I=>fmc112_adc_data_clk, O=>USER_SMA_GPIO_N);
 
-  PROCESS (fmc112_adc_data_clk) IS
-    VARIABLE counter : unsigned(fmc112_data_fifo_din'length-1 DOWNTO 0) := (OTHERS => '0');
-  BEGIN
-    IF falling_edge(fmc112_adc_data_clk) THEN  -- register half-cycle earlier
-      -- FOR memory write continuity test
-      -- fmc112_data_fifo_din <= std_logic_vector(counter);
-      counter := counter + 1;
-      -- reference clock out
-      USER_SMA_CLOCK_P <=     counter(2);
-      USER_SMA_CLOCK_N <= NOT counter(2);
-    END IF;
-  END PROCESS;
   -- capture the rising edge of trigger
-  PROCESS (control_clk, reset) IS
-  BEGIN 
-    IF reset = '1' THEN
-      fmc112_trig_prev  <= '0';
-      fmc112_trig_prev1 <= '0';
-      fmc112_trig_prev2 <= '0';
-    ELSIF rising_edge(control_clk) THEN
-      fmc112_trig_prev  <= fmc112_trig_in;
-      fmc112_trig_prev1 <= fmc112_trig_prev;
-      fmc112_trig_prev2 <= fmc112_trig_prev1;
-    END IF;
-  END PROCESS;
-  fmc112_trig_allow  <= config_reg(32*6+30);
-  fmc112_trig_synced <= '1' WHEN fmc112_trig_prev2 = '0' AND fmc112_trig_prev1 = '1' ELSE
-                        '0';
+  trig_edge_sync_inst : edge_sync
+    PORT MAP (
+      RESET => reset,
+      CLK   => control_clk,
+      EI    => fmc112_trig_in,
+      SO    => fmc112_trig_synced
+    );
+  fmc112_trig_allow    <= config_reg(32*6+30);
   fmc112_data_wr_start <= pulse_reg(3) OR (fmc112_trig_synced AND fmc112_trig_allow
                                            AND (NOT fmc112_data_wr_busy)
                                            AND (NOT fmc112_data_wr_wrapped));

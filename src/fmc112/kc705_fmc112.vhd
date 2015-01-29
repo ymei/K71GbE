@@ -90,6 +90,7 @@ ENTITY kc705_fmc112 IS
     CLK_TO_FPGA_N_1 : IN    std_logic;
     EXT_TRIGGER_P_1 : IN    std_logic;
     EXT_TRIGGER_N_1 : IN    std_logic;
+    EXT_TRIGGER     : OUT   std_logic;
     OUTA_P_1        : IN    std_logic_vector(11 DOWNTO 0);
     OUTA_N_1        : IN    std_logic_vector(11 DOWNTO 0);
     OUTB_P_1        : IN    std_logic_vector(11 DOWNTO 0);
@@ -536,6 +537,7 @@ component sip_fmc112
    clk_to_fpga_n                           : in    std_logic;
    ext_trigger_p                           : in    std_logic;
    ext_trigger_n                           : in    std_logic;
+   ext_trigger                             : out   std_logic;
    outa_p                                  : in    std_logic_vector(11 downto 0);
    outa_n                                  : in    std_logic_vector(11 downto 0);
    outb_p                                  : in    std_logic_vector(11 downto 0);
@@ -831,6 +833,7 @@ port map
    clk_to_fpga_n             =>   clk_to_fpga_n_1,
    ext_trigger_p             =>   ext_trigger_p_1,
    ext_trigger_n             =>   ext_trigger_n_1,
+   ext_trigger               =>   ext_trigger,
    outa_p                    =>   outa_p_1,
    outa_n                    =>   outa_n_1,
    outb_p                    =>   outb_p_1,

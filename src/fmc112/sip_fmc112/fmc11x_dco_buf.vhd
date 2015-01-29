@@ -107,7 +107,7 @@ clk_inv <= not clk_in_int_buf;
 -- BUFR generates the slow clock
 bufr_inst_clk_div : BUFR
 generic map (
-  SIM_DEVICE => "VIRTEX6",
+  SIM_DEVICE => "7SERIES",
   BUFR_DIVIDE => "4"
 )
 port map (

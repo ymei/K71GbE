@@ -96,6 +96,7 @@ port (
   clk_to_fpga_n    : in    std_logic;
   ext_trigger_p    : in    std_logic;
   ext_trigger_n    : in    std_logic;
+  ext_trigger      : out   std_logic;
 
   dco_p            : in    std_logic_vector(2 downto 0);
   dco_n            : in    std_logic_vector(2 downto 0);
@@ -968,7 +969,20 @@ port map (
 ctrl(4) <= 'Z';
 ctrl(5) <= 'Z';
 ctrl(6) <= 'Z';
-ctrl(7) <= ext_trigger_buf; --maps to the trigger output
+
+iobuf_trig : IOBUF
+  GENERIC MAP (
+    DRIVE      => 12,
+    IOSTANDARD => "DEFAULT",
+    SLEW       => "SLOW"                -- output rise/fall
+  )
+  PORT MAP (
+    IO => ctrl(7),  -- Buffer inout port (connect directly to top-level port)
+    O  => OPEN,                         -- Buffer output to FPGA
+    I  => ext_trigger_buf,              -- Buffer input from FPGA
+    T  => '0'       -- 3-state enable input, '1'=input, '0'=output 
+  );
+ext_trigger <= ext_trigger_buf;
 
 ----------------------------------------------------------------------------------------------------
 -- Frequency counter
