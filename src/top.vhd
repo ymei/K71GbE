@@ -1340,7 +1340,7 @@ BEGIN
     PORT MAP (
       RESET   => reset,
       CLK     => fmc112_adc_data_clk,
-      DIV     => x"2",
+      DIV     => config_reg(16*15+3 DOWNTO 16*15),
       CLK_DIV => fmc112_adc_refout_clkdiv
     );
   clk_fwd_inst  : clk_fwd

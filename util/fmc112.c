@@ -665,7 +665,11 @@ int fmc112_prepare(int sockfd)
     val |=  (avgMask<<8);
     n = cmd_write_register(&buf32, 14, val);
     n = query_response(sockfd, buf, n, buf, 0);
-    
+
+    /* reference clock frequency division factor (2**n) */
+    n = cmd_write_register(&buf32, 15, 3);
+    n = query_response(sockfd, buf, n, buf, 0);
+
     free(sip_star_info);
     return 1;
 }
