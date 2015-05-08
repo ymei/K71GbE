@@ -432,7 +432,7 @@ ARCHITECTURE Behavioral OF top IS
     GENERIC (
       NCH            : positive := 16;
       OUTCH_WIDTH    : positive := 16;
-      INTERNAL_WIDTH : positive := 20;
+      INTERNAL_WIDTH : positive := 32;
       INDATA_WIDTH   : positive := 256;
       OUTDATA_WIDTH  : positive := 256
     );
