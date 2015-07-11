@@ -248,6 +248,11 @@ ARCHITECTURE Behavioral OF top IS
       MDIO                 : INOUT std_logic;
       MDC                  : OUT   std_logic;
       -- TCP
+      MAC_ADDR             : IN    std_logic_vector(47 DOWNTO 0);
+      IPv4_ADDR            : IN    std_logic_vector(31 DOWNTO 0);
+      IPv6_ADDR            : IN    std_logic_vector(127 DOWNTO 0);
+      SUBNET_MASK          : IN    std_logic_vector(31 DOWNTO 0);
+      GATEWAY_IP_ADDR      : IN    std_logic_vector(31 DOWNTO 0);
       TCP_CONNECTION_RESET : IN    std_logic;
       TX_TDATA             : IN    std_logic_vector(7 DOWNTO 0);
       TX_TVALID            : IN    std_logic;
@@ -664,6 +669,10 @@ ARCHITECTURE Behavioral OF top IS
   ---------------------------------------------> ten_gig_eth
   SIGNAL usr_data_output                   : std_logic_vector (7 DOWNTO 0);
   ---------------------------------------------< gig_eth
+  SIGNAL gig_eth_mac_addr                  : std_logic_vector(47 DOWNTO 0);
+  SIGNAL gig_eth_ipv4_addr                 : std_logic_vector(31 DOWNTO 0);
+  SIGNAL gig_eth_subnet_mask               : std_logic_vector(31 DOWNTO 0);
+  SIGNAL gig_eth_gateway_ip_addr           : std_logic_vector(31 DOWNTO 0);
   SIGNAL gig_eth_tx_tdata                  : std_logic_vector(7 DOWNTO 0);
   SIGNAL gig_eth_tx_tvalid                 : std_logic;
   SIGNAL gig_eth_tx_tready                 : std_logic;  
@@ -1086,6 +1095,12 @@ BEGIN
   ---------------------------------------------> ten_gig_eth
   ---------------------------------------------< gig_eth
   gig_eth_cores : IF ENABLE_GIG_ETH GENERATE
+    gig_eth_mac_addr(gig_eth_mac_addr'length-1 DOWNTO 4)   <= x"000a3502a75";
+    gig_eth_mac_addr(3 DOWNTO 0)                           <= DIPSw4Bit;
+    gig_eth_ipv4_addr(gig_eth_ipv4_addr'length-1 DOWNTO 4) <= x"c0a8020";
+    gig_eth_ipv4_addr(3 DOWNTO 0)                          <= DIPSw4Bit;
+    gig_eth_subnet_mask                                    <= x"ffffff00";
+    gig_eth_gateway_ip_addr                                <= x"c0a80201";
     gig_eth_inst : gig_eth
       PORT MAP (
         -- asynchronous reset
@@ -1106,6 +1121,11 @@ BEGIN
         MDIO                 => MDIO,
         MDC                  => MDC,
         -- TCP
+        MAC_ADDR             => gig_eth_mac_addr,
+        IPv4_ADDR            => gig_eth_ipv4_addr,
+        IPv6_ADDR            => (OTHERS => '0'),
+        SUBNET_MASK          => gig_eth_subnet_mask,
+        GATEWAY_IP_ADDR      => gig_eth_gateway_ip_addr,
         TCP_CONNECTION_RESET => '0',
         TX_TDATA             => gig_eth_tx_tdata,
         TX_TVALID            => gig_eth_tx_tvalid,

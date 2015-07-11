@@ -11,6 +11,11 @@ Mode switch: M2 M1 M0
 0 0 1 Master SPI x1, x2, x4
 0 1 0 Master BPI x8, x16
 1 0 1 JTAG
+
+In Vivado, use the Tcl command:
+write_cfgmem -format MCS -size 128 -interface BPIx16 -loadbit "up 0x0 top/top.runs/impl_1/top.bit" target/FMC112IPv4Sel.mcs
+Then in Hardware Manager, choose Micron density 1024Mb 28f128p30t-bpi-x16
+Pull-none, RS Pins 25:24
 -------------------------------------------------------------------------------
 rgmii IDELAY_VALUE (.xdc) affects the 1gig ethernet reliability
 

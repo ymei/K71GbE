@@ -162,6 +162,11 @@ entity gig_eth is
       mdc                           : out std_logic;
 
       -- TCP
+      MAC_ADDR                      : IN  std_logic_vector(47 DOWNTO 0);
+      IPv4_ADDR                     : IN  std_logic_vector(31 DOWNTO 0);
+      IPv6_ADDR                     : IN  std_logic_vector(127 DOWNTO 0);
+      SUBNET_MASK                   : IN  std_logic_vector(31 DOWNTO 0);
+      GATEWAY_IP_ADDR               : IN  std_logic_vector(31 DOWNTO 0);
       TCP_CONNECTION_RESET          : IN  std_logic;
       TX_TDATA                      : IN  std_logic_vector(7 downto 0);
       TX_TVALID                     : IN  std_logic;
@@ -624,6 +629,12 @@ architecture wrapper of gig_eth is
   signal enable_phy_loopback                 : std_logic := '0';
 
   -- tcp
+  SIGNAL tcp_mac_addr        : std_logic_vector(47 DOWNTO 0);
+  SIGNAL tcp_ipv4_addr       : std_logic_vector(31 DOWNTO 0);
+  SIGNAL tcp_ipv6_addr       : std_logic_vector(127 DOWNTO 0);
+  SIGNAL tcp_subnet_mask     : std_logic_vector(31 DOWNTO 0);
+  SIGNAL tcp_gateway_ip_addr : std_logic_vector(31 DOWNTO 0);
+  
   SIGNAL mac_rx_sof        : std_logic;
   SIGNAL tcp_rx_data       : std_logic_vector(7 DOWNTO 0);
   SIGNAL tcp_rx_data_valid : std_logic;
@@ -840,7 +851,17 @@ begin
    );
 
    ---------------------------------------------< tcp_server
-
+   PROCESS (gtx_clk_bufg) IS
+   BEGIN  -- Make configurations synchronous to CLK125 of the TCP module
+     IF rising_edge(gtx_clk_bufg) THEN
+       tcp_mac_addr        <= MAC_ADDR;
+       tcp_ipv4_addr       <= IPv4_ADDR;
+       tcp_ipv6_addr       <= IPv6_ADDR;
+       tcp_subnet_mask     <= SUBNET_MASK;
+       tcp_gateway_ip_addr <= GATEWAY_IP_ADDR;
+     END IF;
+   END PROCESS;
+ 
    -- generate a 1-clk wide pulse SOF (start of frame)
    mac_rx_sof_gen : PROCESS (gtx_clk_bufg, glbl_rst_int) IS
      VARIABLE state       : std_logic;
@@ -899,11 +920,11 @@ begin
        --//-- CONFIGURATION
        -- configuration signals are synchonous with CLK
        -- Synchronous with CLK clock.
-       MAC_ADDR        => x"000a3502a758",
-       IPv4_ADDR       => x"c0a80203",
-       IPv6_ADDR       => (OTHERS => '0'),
-       SUBNET_MASK     => x"ffffff00",
-       GATEWAY_IP_ADDR => x"c0a80201",
+       MAC_ADDR        => tcp_mac_addr,
+       IPv4_ADDR       => tcp_ipv4_addr,
+       IPv6_ADDR       => tcp_ipv6_addr,
+       SUBNET_MASK     => tcp_subnet_mask,
+       GATEWAY_IP_ADDR => tcp_gateway_ip_addr,
        -- local IP address. 4 bytes for IPv4, 16 bytes for IPv6
        -- Natural order (MSB) 172.16.1.128 (LSB) as transmitted in the IP frame.
 
