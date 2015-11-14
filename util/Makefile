@@ -15,7 +15,7 @@ LIBS    += -L/opt/local/lib -L/usr/local/lib -lpthread -lhdf5
 GSLLIBS  = $(shell gsl-config --libs)
 GLLIBS   =
 ############################# OS & ARCH specifics #############################
-ifneq ($(OSTYPE)), Linux)
+ifneq ($(OSTYPE), Linux)
   ifeq ($(OSTYPE), Darwin)
     CC            = clang
     GLLIBS       += -framework GLUT -framework OpenGL -framework Cocoa
