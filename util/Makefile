@@ -10,12 +10,12 @@ SHLIB_EXT      := .so
 LIBS           := -lm
 LDFLAGS        :=
 ############################# Library add-ons #################################
-INCLUDE += -I/opt/local/include
-LIBS    += -L/opt/local/lib -lpthread -lhdf5
+INCLUDE += -I/opt/local/include -I/usr/local/include
+LIBS    += -L/opt/local/lib -L/usr/local/lib -lpthread -lhdf5
 GSLLIBS  = $(shell gsl-config --libs)
 GLLIBS   =
 ############################# OS & ARCH specifics #############################
-ifneq ($(if $(filter Linux %BSD,$(OSTYPE)),OK), OK)
+ifneq ($(OSTYPE)), Linux)
   ifeq ($(OSTYPE), Darwin)
     CC            = clang
     GLLIBS       += -framework GLUT -framework OpenGL -framework Cocoa
@@ -24,20 +24,21 @@ ifneq ($(if $(filter Linux %BSD,$(OSTYPE)),OK), OK)
     ifeq ($(shell sysctl -n hw.optional.x86_64), 1)
       ARCH       := x86_64
     endif
+  else ifeq ($(OSTYPE), FreeBSD)
+    CC      = clang
+    GLLIBS += -lGL -lGLU -lglut
+  else ifeq ($(OSTYPE), SunOS)
+    CFLAGS     := -Wall
   else
-    ifeq ($(OSTYPE), SunOS)
-      CFLAGS     := -Wall
-    else
-      # Let's assume this is win32
-      SHLIB_EXT  := .dll
-    endif
+    # Let's assume this is win32
+    SHLIB_EXT  := .dll
   endif
 else
-  GLLIBS         += -lGL -lGLU -lglut
+  GLLIBS += -lGL -lGLU -lglut
 endif
 
 ifneq ($(ARCH), x86_64)
-  CFLAGS_32      += -m32
+  CFLAGS_32 += -m32
 endif
 
 # Are all G5s ppc970s?
