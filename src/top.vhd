@@ -875,46 +875,48 @@ BEGIN
   END GENERATE dbg_cores;
   ---------------------------------------------> debug : ILA and VIO (`Chipscope')
   ---------------------------------------------< UART/RS232
-  uartio_inst : uartio
-    GENERIC MAP (
-      -- tick repetition frequency is (input freq) / (2**COUNTER_WIDTH / DIVISOR)
-      COUNTER_WIDTH => 16,
-      DIVISOR       => 1208*2
-    )
-    PORT MAP (
-      CLK     => clk_50MHz,
-      RESET   => reset,
-      RX_DATA => uart_rx_data,
-      RX_RDY  => uart_rx_rdy,
-      TX_DATA => "0000" & DIPSw4Bit,
-      TX_EN   => '1',
-      TX_RDY  => dbg_ila_probe0(2),
-      -- serial lines
-      RX_PIN  => USB_TX,                -- notice the pin swap
-      TX_PIN  => USB_RX
-    );
+  uart_cores : IF false GENERATE
+    uartio_inst : uartio
+      GENERIC MAP (
+        -- tick repetition frequency is (input freq) / (2**COUNTER_WIDTH / DIVISOR)
+        COUNTER_WIDTH => 16,
+        DIVISOR       => 1208*2
+      )
+      PORT MAP (
+        CLK     => clk_50MHz,
+        RESET   => reset,
+        RX_DATA => uart_rx_data,
+        RX_RDY  => uart_rx_rdy,
+        TX_DATA => "0000" & DIPSw4Bit,
+        TX_EN   => '1',
+        TX_RDY  => dbg_ila_probe0(2),
+        -- serial lines
+        RX_PIN  => USB_TX,                -- notice the pin swap
+        TX_PIN  => USB_RX
+      );
 
-  --dbg_ila1_probe0(7 DOWNTO 0)  <= uart_rx_data;
-  --dbg_ila1_probe0(8)           <= uart_rx_rdy;
-  --dbg_ila1_probe0(9)           <= USB_TX;
+    --dbg_ila1_probe0(7 DOWNTO 0)  <= uart_rx_data;
+    --dbg_ila1_probe0(8)           <= uart_rx_rdy;
+    --dbg_ila1_probe0(9)           <= USB_TX;
 
-  -- dbg_ila_probe0(63 DOWNTO 32) <= cmd_fifo_q(31 DOWNTO 0);
-  dbg_ila_probe0(31)           <= cmd_fifo_empty;
-  dbg_ila_probe0(30)           <= cmd_fifo_rdreq;
+    -- dbg_ila_probe0(63 DOWNTO 32) <= cmd_fifo_q(31 DOWNTO 0);
+    dbg_ila_probe0(31)           <= cmd_fifo_empty;
+    dbg_ila_probe0(30)           <= cmd_fifo_rdreq;
 
-  byte2cmd_inst : byte2cmd
-    PORT MAP (
-      CLK            => clk_50MHz,
-      RESET          => reset,
-      -- byte in
-      RX_DATA        => uart_rx_data,
-      RX_RDY         => uart_rx_rdy,
-      -- cmd out
-      CMD_FIFO_Q     => OPEN,-- cmd_fifo_q,
-      CMD_FIFO_EMPTY => OPEN,-- cmd_fifo_empty,
-      CMD_FIFO_RDCLK => control_clk,
-      CMD_FIFO_RDREQ => '0'  -- cmd_fifo_rdreq
-    );
+    byte2cmd_inst : byte2cmd
+      PORT MAP (
+        CLK            => clk_50MHz,
+        RESET          => reset,
+        -- byte in
+        RX_DATA        => uart_rx_data,
+        RX_RDY         => uart_rx_rdy,
+        -- cmd out
+        CMD_FIFO_Q     => OPEN,-- cmd_fifo_q,
+        CMD_FIFO_EMPTY => OPEN,-- cmd_fifo_empty,
+        CMD_FIFO_RDCLK => control_clk,
+        CMD_FIFO_RDREQ => '0'  -- cmd_fifo_rdreq
+      );
+  END GENERATE uart_cores;
 
   control_clk <= clk_100MHz;
   control_interface_inst : control_interface
@@ -1017,7 +1019,7 @@ BEGIN
 
     s_axi_aresetn         <= '1';
     sTx_axis_fifo_aresetn <= '1';
-    sRx_axis_fifo_aresetn <= '1';
+    -- sRx_axis_fifo_aresetn <= '1';
 
     ten_gig_eth_packet_gen_inst : ten_gig_eth_packet_gen
       PORT MAP (

@@ -96,9 +96,10 @@ ARCHITECTURE Behavioral OF ten_gig_eth IS
     PORT (
       refclk_p               : IN  std_logic;
       refclk_n               : IN  std_logic;
-      core_clk156_out        : OUT std_logic;
+      coreclk_out            : OUT std_logic;
       reset                  : IN  std_logic;
       qpll_locked            : OUT std_logic;
+      sim_speedup_control    : IN  std_logic := '0';
       xgmii_txd              : IN  std_logic_vector(63 DOWNTO 0);
       xgmii_txc              : IN  std_logic_vector(7 DOWNTO 0);
       xgmii_rxd              : OUT std_logic_vector(63 DOWNTO 0);
@@ -290,7 +291,7 @@ BEGIN
     PORT MAP (
       refclk_p               => REFCLK_P,
       refclk_n               => REFCLK_N,
-      core_clk156_out        => clk156_i,
+      coreclk_out            => clk156_i,
       reset                  => RESET,
       qpll_locked            => qpll_locked,
       xgmii_txd              => xgmii_txd,

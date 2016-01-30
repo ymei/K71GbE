@@ -173,7 +173,6 @@ architecture wrapper of tri_mode_ethernet_mac_0_support is
    component tri_mode_ethernet_mac_0
    port(
       gtx_clk                    : in  std_logic;
-
       gtx_clk90                  : in  std_logic;
       
       -- asynchronous reset
@@ -323,7 +322,9 @@ begin
   port map(
       glbl_rstn                  => glbl_rstn,
       refclk                     => refclk,
+      
       idelayctrl_ready           => idelayctrl_ready,
+      
       idelayctrl_reset_out       => idelayctrl_reset,
       gtx_clk                    => gtx_clk,
       gtx_dcm_locked             => gtx_mmcm_locked,
@@ -333,6 +334,9 @@ begin
    -- An IDELAYCTRL primitive needs to be instantiated for the Fixed Tap Delay
    -- mode of the IDELAY.
    tri_mode_ethernet_mac_idelayctrl_common_i : IDELAYCTRL
+    generic map (
+      SIM_DEVICE => "7SERIES"
+    )
     port map (
       RDY                    => idelayctrl_ready,
       REFCLK                 => refclk,
@@ -440,5 +444,5 @@ begin
    );
 
 end wrapper;
- 
+
  

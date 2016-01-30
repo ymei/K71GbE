@@ -72,7 +72,7 @@ entity ten_gig_eth_pcs_pma_0_ff_synchronizer_rst2 is
     clk : in std_logic;
     rst : in std_logic;
     data_in : in std_logic;
-    data_out : out std_logic
+    data_out : out std_logic := '0'
   );
 end ten_gig_eth_pcs_pma_0_ff_synchronizer_rst2;
 

@@ -1,5 +1,7 @@
-KC705 1-gigabit ethernet (TCP) data acquisition from FMC112 module
-
+/** \mainpage
+@brief
+KC705 1-gigabit ethernet (TCP) data acquisition with FMC112 module
+\verbatim
 -------------------------------------------------------------------------------
 Generating a PROM file (MCS):
 In iMPACT, select BPI Flash Configure Single FPGA
@@ -17,6 +19,8 @@ write_cfgmem -format MCS -size 128 -interface BPIx16 -loadbit "up 0x0 top/top.ru
 Then in Hardware Manager, choose Micron density 1024Mb 28f128p30t-bpi-x16
 Pull-none, RS Pins 25:24
 -------------------------------------------------------------------------------
+gig_eth:
+
 rgmii IDELAY_VALUE (.xdc) affects the 1gig ethernet reliability
 
 With Vivado 2013.4 and 2014.4, values 10 and 30 both work, but 20 doesn't.
@@ -27,22 +31,36 @@ RGMII_RXD[*] , RGMII_RX_CTL to RGMII_RXC
 IDELAY_VALUE  | Total delay | Setup Slack
 30              4 ns          -1.13 ns
 10              2 ns           0.8  ns    <- did not violate timing constraints
+
+When core is updated, compare to example design to update.
 -------------------------------------------------------------------------------
 MIG parameters:
 
-Clock Period: 1250ps
+Clock Period: 1250ps (800MHz)
 SODIMM DDR3
 Memory part: MT8JTF12864HZ-1G6
-ROW-BANK-COLUMN order
-RTT RZQ/6
+Data Mask: (check)
+Ordering: Normal
 Input Clock Period: 5000ps
+Read Burst: sequential
+Output Driver Impedance Control: RZQ/7
+Controller Chip Select Pin: Enable
+RTT RZQ/6
+ROW-BANK-COLUMN order
 System Clock   : no buffer
 Reference Clock: no buffer
+reset active high
 50Ohm
 DCI Cascade (check)
-reset active high
 -------------------------------------------------------------------------------
 In Vivado 2014.4, placing sophisticated PROCESS etc. in the top module doesn't
 seem to work well.  Those logics get trimmed wildly.  Place them in modules
 instead.
+-------------------------------------------------------------------------------
+ten_gig_eth:
+
+When pcs_pma core is updated, open its example design and compare to
+the source to update.  Updates in the source were marked with --ymei
+\endverbatim
+*/
 

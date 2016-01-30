@@ -79,14 +79,12 @@
 --        |_________________________________________________________|
 --
 
-
-library unisim;
-use unisim.vcomponents.all;
-
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+library unisim;
+use unisim.vcomponents.all;
 
 --------------------------------------------------------------------------------
 -- The module declaration for the fifo block level wrapper.
@@ -115,9 +113,11 @@ entity tri_mode_ethernet_mac_0_fifo_block is
       ------------------------------------------
       rx_fifo_clock              : in  std_logic;
       rx_fifo_resetn             : in  std_logic;
-      rx_axis_fifo_tdata         : out std_logic_vector(7 downto 0);
-      rx_axis_fifo_tvalid        : out std_logic;
       rx_axis_fifo_tready        : in  std_logic;
+      rx_axis_fifo_tvalid        : out std_logic;
+      
+      rx_axis_fifo_tdata         : out std_logic_vector(7 downto 0);
+      
       rx_axis_fifo_tlast         : out std_logic;
 
 
@@ -133,9 +133,11 @@ entity tri_mode_ethernet_mac_0_fifo_block is
       ---------------------------------------------
       tx_fifo_clock              : in  std_logic;
       tx_fifo_resetn             : in  std_logic;
-      tx_axis_fifo_tdata         : in  std_logic_vector(7 downto 0);
-      tx_axis_fifo_tvalid        : in  std_logic;
       tx_axis_fifo_tready        : out std_logic;
+      tx_axis_fifo_tvalid        : in  std_logic;
+      
+      tx_axis_fifo_tdata         : in  std_logic_vector(7 downto 0);
+      
       tx_axis_fifo_tlast         : in  std_logic;
 
       -- MAC Control Interface
@@ -229,18 +231,17 @@ architecture wrapper of tri_mode_ethernet_mac_0_fifo_block is
       -- Transmitter Interface
       -------------------------------
       tx_enable                  : out std_logic;
-
       tx_ifg_delay               : in  std_logic_vector(7 downto 0);
       tx_statistics_vector       : out std_logic_vector(31 downto 0);
       tx_statistics_valid        : out std_logic;
 
       tx_mac_aclk                : out std_logic;
       tx_reset                   : out std_logic;
-      tx_axis_mac_tdata          : in  std_logic_vector(7 downto 0);
+      tx_axis_mac_tready         : out std_logic;
       tx_axis_mac_tvalid         : in  std_logic;
+      tx_axis_mac_tdata          : in  std_logic_vector(7 downto 0);
       tx_axis_mac_tlast          : in  std_logic;
       tx_axis_mac_tuser          : in  std_logic_vector(0 downto 0);
-      tx_axis_mac_tready         : out std_logic;
       -- MAC Control Interface
       ------------------------
       pause_req                  : in  std_logic;
@@ -306,6 +307,7 @@ architecture wrapper of tri_mode_ethernet_mac_0_fifo_block is
   ------------------------------------------------------------------------------
   -- Component declaration for the fifo
   ------------------------------------------------------------------------------
+
    component tri_mode_ethernet_mac_0_ten_100_1g_eth_fifo
    generic (
         FULL_DUPLEX_ONLY    : boolean := true);      -- If fifo is to be used only in full
@@ -347,6 +349,8 @@ architecture wrapper of tri_mode_ethernet_mac_0_fifo_block is
         rx_fifo_overflow         : out std_logic
   );
   end component;
+
+  
 
   ------------------------------------------------------------------------------
   -- Component declaration for the reset synchroniser
@@ -519,42 +523,45 @@ begin
    rx_mac_resetn <= not rx_mac_reset;
 
 
+   
    user_side_FIFO : tri_mode_ethernet_mac_0_ten_100_1g_eth_fifo
    generic map(
       FULL_DUPLEX_ONLY        => true
    )
+   
    port map(
       -- Transmit FIFO MAC TX Interface
       tx_fifo_aclk          => tx_fifo_clock,
       tx_fifo_resetn        => tx_fifo_resetn,
-      tx_axis_fifo_tdata    => tx_axis_fifo_tdata,
-      tx_axis_fifo_tvalid   => tx_axis_fifo_tvalid,
-      tx_axis_fifo_tlast    => tx_axis_fifo_tlast,
       tx_axis_fifo_tready   => tx_axis_fifo_tready,
+      tx_axis_fifo_tvalid   => tx_axis_fifo_tvalid,
+      tx_axis_fifo_tdata    => tx_axis_fifo_tdata,
+      tx_axis_fifo_tlast    => tx_axis_fifo_tlast,
+      
 
       tx_mac_aclk           => tx_mac_aclk_int,
       tx_mac_resetn         => tx_mac_resetn,
-      tx_axis_mac_tdata     => tx_axis_mac_tdata,
-      tx_axis_mac_tvalid    => tx_axis_mac_tvalid,
-      tx_axis_mac_tlast     => tx_axis_mac_tlast,
       tx_axis_mac_tready    => tx_axis_mac_tready,
+      tx_axis_mac_tvalid    => tx_axis_mac_tvalid,
+      tx_axis_mac_tdata     => tx_axis_mac_tdata,
+      tx_axis_mac_tlast     => tx_axis_mac_tlast,
       tx_axis_mac_tuser     => tx_axis_mac_tuser(0),
       tx_fifo_overflow      => open,
       tx_fifo_status        => open,
       tx_collision          => '0',
       tx_retransmit         => '0',
-
       rx_fifo_aclk          => rx_fifo_clock,
       rx_fifo_resetn        => rx_fifo_resetn,
-      rx_axis_fifo_tdata    => rx_axis_fifo_tdata,
-      rx_axis_fifo_tvalid   => rx_axis_fifo_tvalid,
-      rx_axis_fifo_tlast    => rx_axis_fifo_tlast,
       rx_axis_fifo_tready   => rx_axis_fifo_tready,
+      rx_axis_fifo_tvalid   => rx_axis_fifo_tvalid,
+      rx_axis_fifo_tdata    => rx_axis_fifo_tdata,
+      rx_axis_fifo_tlast    => rx_axis_fifo_tlast,
+      
 
       rx_mac_aclk           => rx_mac_aclk_int,
       rx_mac_resetn         => rx_mac_resetn,
-      rx_axis_mac_tdata     => rx_axis_mac_tdata,
       rx_axis_mac_tvalid    => rx_axis_mac_tvalid,
+      rx_axis_mac_tdata     => rx_axis_mac_tdata,
       rx_axis_mac_tlast     => rx_axis_mac_tlast,
       rx_axis_mac_tuser     => rx_axis_mac_tuser,
 
@@ -564,3 +571,4 @@ begin
 
 
 end wrapper;
+

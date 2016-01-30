@@ -260,6 +260,8 @@ architecture rtl of tri_mode_ethernet_mac_0_axi_lite_sm is
    signal s_axi_rready_int         : std_logic;
 
 
+   
+
 begin
 
    s_axi_awvalid <= s_axi_awvalid_int;
@@ -323,10 +325,12 @@ begin
                   -- this state will be ran after reset to wait for count_shift
                   
                   if (count_shift(20) = '0') then
-                     -- set up MDC frequency. Write 2E to Management configuration
+                        
+                     -- set up MDC frequency. Write 0x58 to Management configuration
                      -- register (Add=340). This will enable MDIO and set MDC to 2.5MHz
-                     -- (set CLOCK_DIVIDE value to 50 dec. for 125MHz s_axi_aclk and
+                     -- (set CLOCK_DIVIDE value to 24 dec. for 125MHz s_axi_aclk and
                      -- enable mdio)
+                     
                      speed          <= mac_speed;
                      assert false
                        report "Setting MDC Frequency to 2.5MHz...." & cr
@@ -334,7 +338,9 @@ begin
                      start_access   <= '1';
                      writenread     <= '1';
                      addr           <= CONFIG_MANAGEMENT_ADD;
-                     axi_wr_data    <= X"00000068";
+                     
+                     axi_wr_data    <= X"00000058";
+                     
                      axi_state      <= CHANGE_SPEED;
                   end if;
                   
@@ -517,17 +523,21 @@ begin
                   
                   
                when CNFG_MDIO =>
-                  -- set up MDC frequency. Write 2E to Management configuration
-                  -- register (Add=340). This will enable MDIO and set MDC to 2.5MHz
-                  -- (set CLOCK_DIVIDE value to 50 dec. for 125MHz s_axi_aclk and
-                  -- enable mdio)
+                       
+                     -- set up MDC frequency. Write 0x58 to Management configuration
+                     -- register (Add=340). This will enable MDIO and set MDC to 2.5MHz
+                     -- (set CLOCK_DIVIDE value to 24 dec. for 125MHz s_axi_aclk and
+                     -- enable mdio)
+                     
                   assert false
                     report "Setting MDC Frequency to 2.5MHZ...." & cr
                     severity note;
                   start_access   <= '1';
                   writenread     <= '1';
                   addr           <= CONFIG_MANAGEMENT_ADD;
-                  axi_wr_data    <= X"00000068";
+                     
+                     axi_wr_data    <= X"00000058";
+                     
                   axi_state      <= CNFG_FLOW;
                when CNFG_FLOW =>
                   assert false
@@ -778,7 +788,6 @@ begin
                s_axi_wvalid_int  <= '1';
                if s_axi_wready = '1' and s_axi_wvalid_int = '1' then
                   axi_status(3)    <= '1';
-                  s_axi_wdata      <= (others => '0');
                   s_axi_wvalid_int <= '0';
                end if;
             end if;

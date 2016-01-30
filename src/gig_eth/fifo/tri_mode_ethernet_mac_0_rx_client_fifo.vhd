@@ -268,6 +268,7 @@ architecture RTL of tri_mode_ethernet_mac_0_rx_client_fifo is
   signal rx_fifo_reset       : std_logic;
   signal rx_mac_reset        : std_logic;
 
+  
 
 --------------------------------------------------------------------------------
 -- Begin FIFO architecture
@@ -814,11 +815,12 @@ begin
         else
            update_addr_tog_sync_reg <= update_addr_tog_sync;
            if update_addr_tog_sync_reg /= update_addr_tog_sync then
-              wr_rd_addr(11 downto 6) <= rd_addr(11 downto 6);
+            wr_rd_addr(11 downto 6) <= rd_addr(11 downto 6);
            end if;
         end if;
      end if;
   end process p_sample_addr;
+
   wr_rd_addr(5 downto 0) <= "000000";
 
   wr_addr_diff_in <= ('0' & wr_rd_addr) - ('0' & wr_addr);

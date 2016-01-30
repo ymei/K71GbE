@@ -143,7 +143,7 @@ ARCHITECTURE a OF control_interface IS
     MEM_RD_CNT,
     PULSE_DELAY,
     FIFO_ADV
-    );
+  );
   SIGNAL cmdState : cmdState_t;
 
 BEGIN
@@ -156,15 +156,21 @@ BEGIN
 
   -- memory input
   sDinA(15 DOWNTO 0)  <= sDinReg;
-  sDinA(31 DOWNTO 16) <= CMD_FIFO_Q(15 DOWNTO 0);
+  -- When FWFT FIFO is used, high 16 bits have to be registered by a cycled.
+  PROCESS (CLK) IS
+  BEGIN
+    IF rising_edge(CLK) THEN
+      sDinA(31 DOWNTO 16) <= CMD_FIFO_Q(15 DOWNTO 0);
+    END IF;
+  END PROCESS;
 
   -- data fifo
-  DATA_FIFO_RDCLK <= NOT CLK;
+  DATA_FIFO_RDCLK <= CLK;
   DATA_FIFO_RDREQ <= sDataFIFOrdreq;
 
   -- data/event FIFO
   sFifoRst <= RESET;
-  sFifoClk <= NOT CLK;
+  sFifoClk <= CLK;
   data_fifo : fifo36x512
     PORT MAP (
       rst    => sFifoRst,

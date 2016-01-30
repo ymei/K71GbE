@@ -65,19 +65,20 @@ entity ten_gig_eth_pcs_pma_0_support is
   port (
     refclk_p             : in  std_logic;
     refclk_n             : in  std_logic;
-    core_clk156_out      : out std_logic;
-    dclk_out             : out std_logic;    
+    dclk_out             : out std_logic; -- ymei
+    coreclk_out          : out std_logic;
     reset                : in  std_logic;
     sim_speedup_control  : in  std_logic := '0';
     qplloutclk_out       : out std_logic;
     qplloutrefclk_out    : out std_logic;
     qplllock_out         : out std_logic;
-    areset_clk156_out     : out std_logic;    
+    areset_datapathclk_out   : out std_logic;
     txusrclk_out         : out std_logic;
     txusrclk2_out        : out std_logic;
     gttxreset_out        : out std_logic;
     gtrxreset_out        : out std_logic;
     txuserrdy_out        : out std_logic;
+    rxrecclk_out         : out std_logic;
     reset_counter_done_out : out std_logic;
     xgmii_txd            : in  std_logic_vector(63 downto 0);
     xgmii_txc            : in  std_logic_vector(7 downto 0);
@@ -93,7 +94,7 @@ entity ten_gig_eth_pcs_pma_0_support is
     mdio_tri             : out std_logic;
     prtad                : in  std_logic_vector(4 downto 0);
     core_status          : out std_logic_vector(7 downto 0);
-    resetdone            : out std_logic;
+    resetdone_out        : out std_logic;
     signal_detect        : in  std_logic;
     tx_fault             : in  std_logic;
     pma_pmd_type         : in  std_logic_vector(2 downto 0);
@@ -128,11 +129,11 @@ architecture wrapper of ten_gig_eth_pcs_pma_0_support is
     refclk_p                : in  std_logic;
     refclk_n                : in  std_logic;
     refclk                  : out std_logic;
-    clk156                  : out std_logic;
-    txclk322                : in  std_logic;
+    coreclk                 : out std_logic;
+    dclk                    : out std_logic; -- ymei
+    txoutclk                : in  std_logic;
     qplllock                : in  std_logic;
-    dclk                    : out std_logic;
-    areset_clk156           : out std_logic;
+    areset_coreclk          : out std_logic;
     gttxreset               : out std_logic;
     gtrxreset               : out std_logic;
     txuserrdy               : out std_logic;
@@ -143,16 +144,18 @@ architecture wrapper of ten_gig_eth_pcs_pma_0_support is
   );
   end component;
 
+
   component ten_gig_eth_pcs_pma_0 is
   port
   (
-     clk156             : in  std_logic;
+     coreclk            : in  std_logic;
      dclk               : in  std_logic;
      txusrclk           : in  std_logic;
      txusrclk2          : in  std_logic;
-     txclk322           : out std_logic;
-     areset_clk156      : in  std_logic;
+     txoutclk           : out std_logic;
+     areset_coreclk     : in  std_logic;
      txuserrdy          : in  std_logic;
+     rxrecclk_out       : out std_logic;
      areset             : in  std_logic;
      gttxreset          : in  std_logic;
      gtrxreset          : in  std_logic;
@@ -181,42 +184,40 @@ architecture wrapper of ten_gig_eth_pcs_pma_0_support is
      tx_fault         : in  std_logic;
      drp_req          : out std_logic;
      drp_gnt          : in  std_logic;
-     drp_den_o          : out std_logic;                                   
+     drp_den_o          : out std_logic;
      drp_dwe_o          : out std_logic;
-     drp_daddr_o        : out std_logic_vector(15 downto 0);                   
-     drp_di_o           : out std_logic_vector(15 downto 0); 
-     drp_drdy_i         : in  std_logic;                
+     drp_daddr_o        : out std_logic_vector(15 downto 0);
+     drp_di_o           : out std_logic_vector(15 downto 0);
+     drp_drdy_i         : in  std_logic;
      drp_drpdo_i        : in  std_logic_vector(15 downto 0);
-     drp_den_i          : in  std_logic;                                   
+     drp_den_i          : in  std_logic;
      drp_dwe_i          : in  std_logic;
-     drp_daddr_i        : in  std_logic_vector(15 downto 0);                   
-     drp_di_i           : in  std_logic_vector(15 downto 0); 
-     drp_drdy_o         : out std_logic;                
+     drp_daddr_i        : in  std_logic_vector(15 downto 0);
+     drp_di_i           : in  std_logic_vector(15 downto 0);
+     drp_drdy_o         : out std_logic;
      drp_drpdo_o        : out std_logic_vector(15 downto 0);
      pma_pmd_type     : in  std_logic_vector(2 downto 0);
      tx_disable       : out std_logic);
   end component;
 
   -- Signal declarations
-  signal clk156 : std_logic;
+  signal dclk_i : std_logic; -- ymei
+  signal coreclk : std_logic;
   signal txoutclk : std_logic;
-
-  signal txclk322 : std_logic;
-  signal dclk_i  : std_logic;
   signal drp_req : std_logic;
   signal drp_gnt : std_logic;
-  signal drp_den_o   : std_logic;                                   
+  signal drp_den_o   : std_logic;
   signal drp_dwe_o   : std_logic;
-  signal drp_daddr_o : std_logic_vector(15 downto 0);                   
-  signal drp_di_o    : std_logic_vector(15 downto 0);   
-  signal drp_drdy_o  : std_logic;                
-  signal drp_drpdo_o : std_logic_vector(15 downto 0);  
-  signal drp_den_i   : std_logic;                                   
+  signal drp_daddr_o : std_logic_vector(15 downto 0);
+  signal drp_di_o    : std_logic_vector(15 downto 0);
+  signal drp_drdy_o  : std_logic;
+  signal drp_drpdo_o : std_logic_vector(15 downto 0);
+  signal drp_den_i   : std_logic;
   signal drp_dwe_i   : std_logic;
-  signal drp_daddr_i : std_logic_vector(15 downto 0);                     
-  signal drp_di_i    : std_logic_vector(15 downto 0);  
-  signal drp_drdy_i  : std_logic;                
-  signal drp_drpdo_i : std_logic_vector(15 downto 0);  
+  signal drp_daddr_i : std_logic_vector(15 downto 0);
+  signal drp_di_i    : std_logic_vector(15 downto 0);
+  signal drp_drdy_i  : std_logic;
+  signal drp_drpdo_i : std_logic_vector(15 downto 0);
 
   signal refclk : std_logic;
   signal qpllreset : std_logic;
@@ -226,35 +227,36 @@ architecture wrapper of ten_gig_eth_pcs_pma_0_support is
 
   signal tx_resetdone_int : std_logic;
   signal rx_resetdone_int : std_logic;
-  signal areset_clk156 : std_logic;
+  signal areset_coreclk : std_logic;
   signal gttxreset : std_logic;
   signal gtrxreset : std_logic;
   signal txuserrdy : std_logic;
   signal reset_counter_done : std_logic;
+  signal areset_txusrclk2 : std_logic;
 
   signal txusrclk : std_logic;
   signal txusrclk2 : std_logic;
-
+  
 begin
-  core_clk156_out <= clk156;
-  resetdone <= tx_resetdone_int and rx_resetdone_int;
+  dclk_out <= dclk_i; -- ymei
+  coreclk_out <= coreclk;
+  resetdone_out <= tx_resetdone_int and rx_resetdone_int;
 
   -- If no arbitration is required on the GT DRP ports then connect REQ to GNT
   -- and connect other signals i <= o;
   drp_gnt <= drp_req;
   drp_den_i <= drp_den_o;
   drp_dwe_i <= drp_dwe_o;
-  drp_daddr_i <= drp_daddr_o;                   
+  drp_daddr_i <= drp_daddr_o;
   drp_di_i <= drp_di_o;
   drp_drdy_i <= drp_drdy_o;
   drp_drpdo_i <= drp_drpdo_o;
   qplloutclk_out <= qplloutclk;
   qplloutrefclk_out <= qplloutrefclk;
   qplllock_out <= qplllock;
-  dclk_out <= dclk_i;
   txusrclk_out <= txusrclk;
   txusrclk2_out <= txusrclk2;
-  areset_clk156_out      <= areset_clk156;
+  areset_datapathclk_out     <= areset_coreclk;
   gttxreset_out          <= gttxreset;
   gtrxreset_out          <= gtrxreset;
   txuserrdy_out          <= txuserrdy;
@@ -276,6 +278,7 @@ begin
      qplloutrefclk  => qplloutrefclk
   );
 
+
   -- Instantiate the 10GBASER/KR shared clock/reset block
 
   ten_gig_eth_pcs_pma_shared_clock_reset_block : ten_gig_eth_pcs_pma_0_shared_clock_and_reset
@@ -285,11 +288,11 @@ begin
      refclk_p            => refclk_p,
      refclk_n            => refclk_n,
      refclk              => refclk,
-     clk156              => clk156,
-     txclk322            => txclk322,
-     dclk                => dclk_i,
+     coreclk             => coreclk,
+     dclk                => dclk_i, -- ymei
+     txoutclk            => txoutclk,
      qplllock            => qplllock,
-     areset_clk156       => areset_clk156,
+     areset_coreclk      => areset_coreclk,
      gttxreset           => gttxreset,
      gtrxreset           => gtrxreset,
      txuserrdy           => txuserrdy,
@@ -304,13 +307,14 @@ begin
   ten_gig_eth_pcs_pma_i : ten_gig_eth_pcs_pma_0
   port map
   (
-     clk156              => clk156,
-     dclk                => dclk_i,
+     coreclk             => coreclk,
+     dclk                => dclk_i, -- ymei
      txusrclk            => txusrclk,
      txusrclk2           => txusrclk2,
-     txclk322            => txclk322,
-     areset_clk156       => areset_clk156,
+     txoutclk            => txoutclk,
+     areset_coreclk      => areset_coreclk,
      txuserrdy           => txuserrdy,
+     rxrecclk_out        => rxrecclk_out,
      areset              => reset,
      gttxreset           => gttxreset,
      gtrxreset           => gtrxreset,
@@ -339,17 +343,17 @@ begin
      tx_fault            => tx_fault,
      drp_req             => drp_req,
      drp_gnt             => drp_gnt,
-      drp_den_o           => drp_den_o,                                   
+      drp_den_o           => drp_den_o,
       drp_dwe_o           => drp_dwe_o,
-      drp_daddr_o         => drp_daddr_o,                   
-      drp_di_o            => drp_di_o, 
-      drp_drdy_o          => drp_drdy_o,                
+      drp_daddr_o         => drp_daddr_o,
+      drp_di_o            => drp_di_o,
+      drp_drdy_o          => drp_drdy_o,
       drp_drpdo_o         => drp_drpdo_o,
-      drp_den_i           => drp_den_i,                                   
+      drp_den_i           => drp_den_i,
       drp_dwe_i           => drp_dwe_i,
-      drp_daddr_i         => drp_daddr_i,                  
-      drp_di_i            => drp_di_i, 
-      drp_drdy_i          => drp_drdy_i,                
+      drp_daddr_i         => drp_daddr_i,
+      drp_di_i            => drp_di_i,
+      drp_drdy_i          => drp_drdy_i,
       drp_drpdo_i         => drp_drpdo_i,
      pma_pmd_type        => pma_pmd_type,
      tx_disable          => tx_disable

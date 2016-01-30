@@ -69,8 +69,12 @@ entity tri_mode_ethernet_mac_0_example_design_resets is
    dcm_locked                 : in std_logic;
 
    -- synchronous reset outputs
+ 
    glbl_rst_intn              : out std_logic;
+   
+   
    gtx_resetn                 : out std_logic := '0';
+   
    s_axi_resetn               : out std_logic := '0';
    phy_resetn                 : out std_logic;
    chk_resetn                 : out std_logic := '0'
@@ -104,18 +108,20 @@ architecture RTL of tri_mode_ethernet_mac_0_example_design_resets is
 
 
 -- define internal signals
-    signal s_axi_pre_resetn   : std_logic := '0';
-    signal s_axi_reset_int    : std_logic;
-    signal combined_reset     : std_logic;
-    signal gtx_pre_resetn     : std_logic := '0';
-    signal gtx_clk_reset_int  : std_logic;
-    signal clear_checker      : std_logic;
-    signal chk_pre_resetn     : std_logic := '0';
-    signal chk_reset_int      : std_logic;
-    signal dcm_locked_sync    : std_logic;
-    signal glbl_rst_int       : std_logic;
-    signal phy_resetn_int     : std_logic;
-    signal phy_reset_count    : unsigned(5 downto 0) := (others => '0');
+    signal s_axi_pre_resetn        : std_logic := '0';
+    signal s_axi_reset_int         : std_logic;
+    signal combined_reset          : std_logic;
+    
+    signal gtx_pre_resetn          : std_logic := '0';
+    signal gtx_clk_reset_int       : std_logic;
+    
+    signal clear_checker           : std_logic;
+    signal chk_pre_resetn          : std_logic := '0';
+    signal chk_reset_int           : std_logic;
+    signal dcm_locked_sync         : std_logic;
+    signal glbl_rst_int            : std_logic;
+    signal phy_resetn_int          : std_logic;
+    signal phy_reset_count         : unsigned(5 downto 0) := (others => '0');
 
 begin
 
@@ -174,17 +180,23 @@ begin
 
 
   -----------------
-  -- gtx_clk reset
+  -- axi_lite clock reset
+  
     combined_reset <= glbl_rst or rx_reset or tx_reset;
 
     gtx_reset_gen : tri_mode_ethernet_mac_0_reset_sync
     port map (
+      
       clk              => gtx_clk,
+      
       enable           => dcm_locked_sync,
       reset_in         => combined_reset,
+      
       reset_out        => gtx_clk_reset_int
+      
    );
 
+   
    -- Create fully synchronous reset in the gtx_clk domain.
    gtx_reset_p : process(gtx_clk)
    begin
@@ -198,24 +210,27 @@ begin
        end if;
      end if;
    end process gtx_reset_p;
+   
 
   -----------------
   -- data check reset
     clear_checker <= glbl_rst or reset_error;
-  -- ymei
-    --chk_reset_gen : tri_mode_ethernet_mac_0_reset_sync
-    --port map (
-    --  clk              => gtx_clk,
-    --  enable           => dcm_locked_sync,
-    --  reset_in         => clear_checker,
-    --  reset_out        => chk_reset_int
-    --);
-   chk_reset_int <= clear_checker;
+
+   -- ymei
+   -- chk_reset_int <= clear_checker;
+   chk_reset_gen : tri_mode_ethernet_mac_0_reset_sync
+   port map (
+     clk              => gtx_clk,
+     enable           => dcm_locked_sync,
+     reset_in         => clear_checker,
+     reset_out        => chk_reset_int
+   );
 
    -- Create fully synchronous reset in the gtx_clk domain.
    chk_reset_p : process(gtx_clk)
    begin
      if gtx_clk'event and gtx_clk = '1' then
+   
        if chk_reset_int = '1' then
          chk_pre_resetn <= '0';
          chk_resetn     <= '0';

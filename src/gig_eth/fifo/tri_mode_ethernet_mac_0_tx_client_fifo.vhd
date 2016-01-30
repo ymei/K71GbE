@@ -317,7 +317,6 @@ architecture RTL of tri_mode_ethernet_mac_0_tx_client_fifo is
   -- Small delay for simulation purposes.
   constant dly : time := 1 ps;
 
-
   ------------------------------------------------------------------------------
   -- Attributes for FIFO simulation and synthesis
   ------------------------------------------------------------------------------
@@ -326,6 +325,8 @@ architecture RTL of tri_mode_ethernet_mac_0_tx_client_fifo is
   attribute ASYNC_REG                          : string;
   attribute ASYNC_REG of wr_rd_addr            : signal is "TRUE";
   attribute ASYNC_REG of wr_col_window_pipe    : signal is "TRUE";
+
+  
 
 
   ------------------------------------------------------------------------------
@@ -901,7 +902,7 @@ gen_fd_decode : if (FULL_DUPLEX_ONLY = TRUE) generate
 
   -- Transmit frame pulse must never be more frequent than once per 64 clocks to
   -- allow toggle to cross clock domain.
-  rd_transmit_frame <= '1' when rd_state = DATA_PRELOAD1_s and rd_nxt_state = FRAME_s
+  rd_transmit_frame <= '1' when rd_state = FINISH_s and rd_nxt_state =IDLE_s
                        else '0';
 
   -- Unused for full duplex only.
@@ -946,7 +947,7 @@ gen_hd_decode : if (FULL_DUPLEX_ONLY = FALSE) generate
 
   -- Transmit frame pulse must never be more frequent than once per 64 clocks to
   -- allow toggle to cross clock domain.
-  rd_transmit_frame <= '1' when rd_state = WAIT_HANDSHAKE_s and rd_nxt_state = FRAME_s
+  rd_transmit_frame <= '1' when rd_state = FINISH_s and rd_nxt_state =IDLE_s
                        else '0';
 
   -- Retransmit frame pulse must never be more frequent than once per 16 clocks
@@ -1379,6 +1380,7 @@ end generate gen_hd_addr;
   -- Data pipelines
   ------------------------------------------------------------------------------
 
+  
   -- Register data inputs to BRAM.
   -- No resets to allow for SRL16 target.
   reg_din_p : process(tx_fifo_aclk)

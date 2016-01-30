@@ -1,0 +1,17 @@
+PROJECT_NAME           = "K71GbE"
+PROJECT_BRIEF          = "KC705 with 1-gigabit ethernet (TCP) control"
+OUTPUT_DIRECTORY       = ./dox
+FULL_PATH_NAMES        = NO
+JAVADOC_AUTOBRIEF      = YES
+QT_AUTOBRIEF           = YES
+RECURSIVE              = YES
+EXCLUDE                = ./top ./target ./ipcore_dir
+USE_MATHJAX            = YES
+PAPER_TYPE             = letter
+LATEX_EXTRA_STYLESHEET = ./Doxylatexsheet.tex
+GENERATE_MAN           = YES
+HAVE_DOT               = YES
+CALL_GRAPH             = YES
+CALLER_GRAPH           = YES
+DOT_IMAGE_FORMAT       = svg
+INTERACTIVE_SVG        = YES

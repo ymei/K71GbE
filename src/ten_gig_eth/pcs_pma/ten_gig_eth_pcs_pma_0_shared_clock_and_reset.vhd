@@ -1,11 +1,11 @@
 -------------------------------------------------------------------------------
--- Title      : Shared clocking and resets                                             
--- Project    : 10GBASE-R                                                      
+-- Title      : Shared clocking and resets
+-- Project    : 10GBASE-R
 -------------------------------------------------------------------------------
--- File       : ten_gig_eth_pcs_pma_0_shared_clock_and_reset.vhd                                          
+-- File       : ten_gig_eth_pcs_pma_0_shared_clock_and_reset.vhd
 -------------------------------------------------------------------------------
--- Description: This file contains the 
--- 10GBASE-R clocking and reset logic which can be shared between multiple cores                
+-- Description: This file contains the
+-- 10GBASE-R clocking and reset logic which can be shared between multiple cores
 -------------------------------------------------------------------------------
 -- (c) Copyright 2009 - 2014 Xilinx, Inc. All rights reserved.
 --
@@ -67,17 +67,16 @@ port
   refclk_p            : in  std_logic;
   refclk_n            : in  std_logic;
   refclk              : out std_logic;
-  txclk322            : in  std_logic;
-  clk156              : out std_logic;
-  dclk                : out std_logic;    
+  txoutclk            : in  std_logic;
+  coreclk             : out std_logic;
+  dclk                : out std_logic; -- ymei
   qplllock            : in  std_logic;
-  areset_clk156       : out std_logic;
+  areset_coreclk      : out std_logic;
   gttxreset           : out std_logic;
   gtrxreset           : out std_logic;
-  txuserrdy           : out std_logic;
+  txuserrdy           : out std_logic := '0';
   txusrclk            : out std_logic;
   txusrclk2           : out std_logic;
-        
   qpllreset           : out std_logic;
   reset_counter_done  : out std_logic
 );
@@ -89,13 +88,14 @@ architecture wrapper of ten_gig_eth_pcs_pma_0_shared_clock_and_reset is
 
     attribute DowngradeIPIdentifiedWarnings of wrapper : architecture is "yes";
 
-  component ten_gig_eth_pcs_pma_0_ff_synchronizer_rst2  
+
+  component ten_gig_eth_pcs_pma_0_ff_synchronizer_rst2
   generic
   (
     C_NUM_SYNC_REGS : integer := 3;
     C_RVAL : std_logic := '0'
   );
-  port 
+  port
   (
     clk : in std_logic;
     rst : in std_logic;
@@ -103,29 +103,29 @@ architecture wrapper of ten_gig_eth_pcs_pma_0_shared_clock_and_reset is
     data_out : out std_logic
   );
   end component;
-  
-  signal clk156_buf : std_logic;
-  signal clk156_int : std_logic;
+
+  signal coreclk_buf : std_logic;
+  signal coreclk_int : std_logic;
   signal refclk_i : std_logic;
   signal txusrclk_i : std_logic;
   signal txusrclk2_i : std_logic;
   signal gttxreset_i : std_logic;
   signal reset_i : std_logic;
 
-  signal areset_clk156_i : std_logic;
+  signal areset_coreclk_i : std_logic;
 
   signal qplllock_txusrclk2_rst : std_logic;
   signal qplllock_txusrclk2_i : std_logic;
 
   signal gttxreset_txusrclk2_i : std_logic;
-  
-  signal reset_counter  : std_logic_vector(7 downto 0) := X"00";
+
+  signal reset_counter  : std_logic_vector(8 downto 0) := "000000000";
   signal reset_pulse : std_logic_vector(3 downto 0) := "1110";
-  
-  
+
+
 begin
-  
-  reset_counter_done <= reset_counter(7);
+
+  reset_counter_done <= reset_counter(8);
 
   -- ymei
   ibufds_inst : IBUFDS
@@ -140,59 +140,60 @@ begin
       IB => refclk_n  -- Diff_n buffer input (connect directly to top-level port)
     );
 
-  --ibufds_inst : IBUFDS_GTE2   
-  --port map
-  --(
-  --   O     => refclk_i,
-  --   ODIV2 => open,
-  --   CEB   => '0',
-  --   I     => refclk_p,
-  --   IB    => refclk_n
-  --);
-  
+  -- ibufds_inst : IBUFDS_GTE2
+  -- port map
+  -- (
+  --    O     => refclk_i,
+  --    ODIV2 => open,
+  --    CEB   => '0',
+  --     I   => refclk_p,
+  --     IB  => refclk_n
+  -- );
+
   refclk <= refclk_i;
-  
-  tx322clk_bufg_i : BUFG 
+
+  txoutclk_bufg_i : BUFG
   port map
   (
-     I => txclk322,
+     I => txoutclk,
      O => txusrclk_i
   );
 
-  clk156_bufg_i : BUFG
+  coreclk_bufg_i : BUFG
     port map
     (
       I  =>      refclk_i,
-      O  =>      clk156_int 
+      O  =>      coreclk_int
     );
 
-  dclk <= clk156_int;
-      
-  clk156              <= clk156_int;
+  dclk <= coreclk_int; -- ymei
+
   txusrclk2           <= txusrclk_i;
-  txusrclk2_i         <= txusrclk_i;  
-  txusrclk            <= txusrclk_i;  
-  reset_i             <= not qplllock ;  
-  areset_clk156       <= areset_clk156_i;  
-        
+  txusrclk2_i         <= txusrclk_i;
+  coreclk              <= coreclk_int;
+  txusrclk             <= txusrclk_i;
+  reset_i              <= not qplllock ;
+  areset_coreclk       <= areset_coreclk_i;
+
   -- Asynch reset synchronizers...
-  areset_clk156_sync_i : ten_gig_eth_pcs_pma_0_ff_synchronizer_rst2 
+  areset_coreclk_sync_i : ten_gig_eth_pcs_pma_0_ff_synchronizer_rst2
     generic map(
-      C_NUM_SYNC_REGS => 4,
-      C_RVAL => '1') 
+      C_NUM_SYNC_REGS => 5,
+      C_RVAL => '1')
     port map(
-      clk      => clk156_int,
+      clk      => coreclk_int,
       rst      => areset,
       data_in  => '0',
-      data_out => areset_clk156_i
+      data_out => areset_coreclk_i
     );
 
+
   qplllock_txusrclk2_rst <= not(qplllock);
-  
-  qplllock_txusrclk2_sync_i : ten_gig_eth_pcs_pma_0_ff_synchronizer_rst2 
+
+  qplllock_txusrclk2_sync_i : ten_gig_eth_pcs_pma_0_ff_synchronizer_rst2
     generic map(
-      C_NUM_SYNC_REGS => 4,
-      C_RVAL => '0') 
+      C_NUM_SYNC_REGS => 5,
+      C_RVAL => '0')
     port map(
       clk      => txusrclk2_i,
       rst      => qplllock_txusrclk2_rst,
@@ -200,37 +201,38 @@ begin
       data_out => qplllock_txusrclk2_i
     );
 
-  gttxreset_txusrclk2_sync_i : ten_gig_eth_pcs_pma_0_ff_synchronizer_rst2 
+  gttxreset_txusrclk2_sync_i : ten_gig_eth_pcs_pma_0_ff_synchronizer_rst2
     generic map(
-      C_NUM_SYNC_REGS => 4,
-      C_RVAL => '1') 
+      C_NUM_SYNC_REGS => 5,
+      C_RVAL => '1')
     port map(
       clk      => txusrclk2_i,
       rst      => gttxreset_i,
       data_in  => '0',
       data_out => gttxreset_txusrclk2_i
     );
-  
-  -- Hold off release the GT resets until 500ns after configuration.
-  -- 128 ticks at 6.4ns period will be >> 500 ns.
 
-  reset_proc1: process (clk156_int)
+
+  -- Hold off release the GT resets until 500ns after configuration.
+  -- 256 ticks at the minimum possible 2.56ns period (390MHz) will be >> 500 ns.
+
+  reset_proc1: process (coreclk_int)
   begin
-    if(clk156_int'event and clk156_int = '1') then
-       if(reset_counter(7) = '0')  then
+    if(coreclk_int'event and coreclk_int = '1') then
+       if(reset_counter(8) = '0')  then
           reset_counter    <= reset_counter + 1;
        else
           reset_counter    <= reset_counter;
        end if;
     end if;
   end process;
-      
-  reset_proc2: process (clk156_int)
+
+  reset_proc2: process (coreclk_int)
   begin
-     if(clk156_int'event and clk156_int = '1') then
-       if(areset_clk156_i = '1') then
-          reset_pulse      <=  "1110"; 
-       elsif(reset_counter(7) = '1') then
+     if(coreclk_int'event and coreclk_int = '1') then
+       if(areset_coreclk_i = '1') then
+          reset_pulse      <=  "1110";
+       elsif(reset_counter(8) = '1') then
           reset_pulse(3)            <=  '0';
           reset_pulse(2 downto 0)   <=  reset_pulse(3 downto 1);
        end if;
@@ -241,7 +243,7 @@ begin
   gttxreset   <=     gttxreset_i;
   gtrxreset   <=     reset_pulse(0);
   qpllreset   <=     reset_pulse(0);
-   
+
   reset_proc5 : process (txusrclk2_i, gttxreset_txusrclk2_i)
   begin
      if(gttxreset_txusrclk2_i = '1') then

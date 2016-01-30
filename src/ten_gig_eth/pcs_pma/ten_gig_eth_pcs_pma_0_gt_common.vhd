@@ -183,7 +183,6 @@ begin
         QPLL_LOCK_CFG                           =>     (x"21E8"),
         QPLL_LPF                                =>     ("1111"),
         QPLL_REFCLK_DIV                         =>     (1)
-
         
     )
     port map
@@ -225,11 +224,12 @@ begin
         BGBYPASSB                       =>      tied_to_vcc_i,
         BGMONITORENB                    =>      tied_to_vcc_i,
         BGPDB                           =>      tied_to_vcc_i,
-        BGRCALOVRD                      =>      "00000",
+        BGRCALOVRD                      =>      "11111",
         PMARSVD                         =>      "00000000",
         RCALENB                         =>      tied_to_vcc_i
 
     );
+
 
 
 
