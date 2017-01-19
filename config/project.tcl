@@ -83,7 +83,7 @@ if { $::argc > 0 } {
 set orig_proj_dir "[file normalize "$origin_dir/../top"]"
 
 # Create project
-create_project top ./top
+create_project top ./
 
 # Set the directory path for the new project
 set proj_dir [get_property directory [current_project]]
@@ -202,15 +202,10 @@ set files [list \
  "[file normalize "$origin_dir/../src/fmc112/kc705_fmc112.vhd"]"\
  "[file normalize "$origin_dir/../src/control_interface.vhd"]"\
  "[file normalize "$origin_dir/../src/byte2cmd.vhd"]"\
- "[file normalize "$origin_dir/../ipcore_dir/dbg_vio/dbg_vio.xci"]"\
- "[file normalize "$origin_dir/../ipcore_dir/dbg_ila1/dbg_ila1.xci"]"\
- "[file normalize "$origin_dir/../ipcore_dir/dbg_ila/dbg_ila.xci"]"\
- "[file normalize "$origin_dir/../backup/ten_gig_eth_packet_gen.vhd"]"\
+ "[file normalize "$origin_dir/../src/ten_gig_eth_packet_gen_simple.vhd"]"\
  "[file normalize "$origin_dir/../src/top.vhd"]"\
- "[file normalize "$origin_dir/../ipcore_dir/mig_7series_0/mig_a.prj"]"\
  "[file normalize "$origin_dir/../src/pulse2pulse.vhd"]"\
  "[file normalize "$origin_dir/../src/sdram_ddr3/sdram_buffer_fifo.vhd"]"\
- "[file normalize "$origin_dir/../ipcore_dir/mig_7series_0/mig_b.prj"]"\
  "[file normalize "$origin_dir/../src/channel_sel.vhd"]"\
  "[file normalize "$origin_dir/../src/channel_avg.vhd"]"\
  "[file normalize "$origin_dir/../src/clk_fwd.vhd"]"\
@@ -221,6 +216,7 @@ set files [list \
  "[file normalize "$origin_dir/../src/ten_gig_eth/pcs_pma/ten_gig_eth_pcs_pma_0_gt_common.vhd"]"\
  "[file normalize "$origin_dir/../src/ten_gig_eth/pcs_pma/ten_gig_eth_pcs_pma_0_ff_synchronizer_rst2.vhd"]"\
  "[file normalize "$origin_dir/../src/ten_gig_eth/pcs_pma/ten_gig_eth_pcs_pma_0_support.vhd"]"\
+ "[file normalize "$origin_dir/../ipcore_dir/mig_7series_0/mig_a.prj"]"\
 ]
 add_files -norecurse -fileset $obj $files
 
@@ -710,28 +706,7 @@ set file [file normalize $file]
 set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
 set_property "file_type" "VHDL" $file_obj
 
-set file "$origin_dir/../ipcore_dir/dbg_vio/dbg_vio.xci"
-set file [file normalize $file]
-set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
-if { ![get_property "is_locked" $file_obj] } {
-  set_property "generate_synth_checkpoint" "0" $file_obj
-}
-
-set file "$origin_dir/../ipcore_dir/dbg_ila1/dbg_ila1.xci"
-set file [file normalize $file]
-set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
-if { ![get_property "is_locked" $file_obj] } {
-  set_property "generate_synth_checkpoint" "0" $file_obj
-}
-
-set file "$origin_dir/../ipcore_dir/dbg_ila/dbg_ila.xci"
-set file [file normalize $file]
-set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
-if { ![get_property "is_locked" $file_obj] } {
-  set_property "generate_synth_checkpoint" "0" $file_obj
-}
-
-set file "$origin_dir/../backup/ten_gig_eth_packet_gen.vhd"
+set file "$origin_dir/../src/ten_gig_eth_packet_gen_simple.vhd"
 set file [file normalize $file]
 set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
 set_property "file_type" "VHDL" $file_obj

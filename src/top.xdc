@@ -85,19 +85,19 @@ set_property LOC AE26 [get_ports {LED8Bit[4]}]
 # Bank: - GPIO_LED_5_LS
 set_property DRIVE 12 [get_ports {LED8Bit[5]}]
 set_property SLEW SLOW [get_ports {LED8Bit[5]}]
-set_property IOSTANDARD LVCMOS15 [get_ports {LED8Bit[5]}]
+set_property IOSTANDARD LVCMOS25 [get_ports {LED8Bit[5]}]
 set_property LOC G19 [get_ports {LED8Bit[5]}]
 
 # Bank: - GPIO_LED_6_LS
 set_property DRIVE 12 [get_ports {LED8Bit[6]}]
 set_property SLEW SLOW [get_ports {LED8Bit[6]}]
-set_property IOSTANDARD LVCMOS15 [get_ports {LED8Bit[6]}]
+set_property IOSTANDARD LVCMOS25 [get_ports {LED8Bit[6]}]
 set_property LOC E18 [get_ports {LED8Bit[6]}]
 
 # Bank: - GPIO_LED_7_LS
 set_property DRIVE 12 [get_ports {LED8Bit[7]}]
 set_property SLEW SLOW [get_ports {LED8Bit[7]}]
-set_property IOSTANDARD LVCMOS15 [get_ports {LED8Bit[7]}]
+set_property IOSTANDARD LVCMOS25 [get_ports {LED8Bit[7]}]
 set_property LOC F16 [get_ports {LED8Bit[7]}]
 
 # GPIO_DIP_SW0
@@ -137,7 +137,7 @@ set_property LOC AB12 [get_ports {BTN5Bit[2]}]
 
 # GPIO_SW_C : SW5
 set_property SLEW SLOW [get_ports {BTN5Bit[3]}]
-set_property IOSTANDARD LVCMOS15 [get_ports {BTN5Bit[3]}]
+set_property IOSTANDARD LVCMOS25 [get_ports {BTN5Bit[3]}]
 set_property LOC G12 [get_ports {BTN5Bit[3]}]
 
 # GPIO_SW_W : SW6

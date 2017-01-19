@@ -1,0 +1,3 @@
+[submodule "src/gig_eth/tcp_server"]
+	path = src/gig_eth/tcp_server
+	url = git@bitbucket.org:ymei/com5402tcpserver.git

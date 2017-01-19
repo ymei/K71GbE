@@ -3,6 +3,25 @@
 KC705 1-gigabit ethernet (TCP) data acquisition with FMC112 module
 \verbatim
 -------------------------------------------------------------------------------
+Generate the project after git clone:
+Make sure there are following lines in config/project.tcl:
+    # Create project
+    create_project top ./
+then 
+    mkdir top; cd top/
+    vivado -mode tcl -source ../config/project.tcl
+# open GUI
+    start_gui
+# start synthesis
+    launch_runs synth_1 -jobs 8
+# start implementation
+    launch_runs -jobs 8 impl_1 -to_step write_bitstream
+# or do everything in tcl terminal
+    open_project /path/to/example.xpr
+    launch_runs -jobs 8 impl_1 -to_step write_bitstream
+    wait_on_run impl_1
+    exit
+-------------------------------------------------------------------------------
 Generating a PROM file (MCS):
 In iMPACT, select BPI Flash Configure Single FPGA
 Kintex7 128M, MCS, x16, no extra data
@@ -52,6 +71,9 @@ Reference Clock: no buffer
 reset active high
 50Ohm
 DCI Cascade (check)
+
+remember to git add ipcore_dir/mig_7series_0/mig_a.prj
+and add the file in config/project.tcl
 -------------------------------------------------------------------------------
 In Vivado 2014.4, placing sophisticated PROCESS etc. in the top module doesn't
 seem to work well.  Those logics get trimmed wildly.  Place them in modules
