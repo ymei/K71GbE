@@ -251,7 +251,7 @@ set_property IODELAY_GROUP tri_mode_ethernet_mac_iodelay_grp [get_cells -hier -f
 #set_input_delay -clock [get_clocks tri_mode_ethernet_mac_0_rgmii_rx_clk] -clock_fall -max -1.5 -add_delay [get_ports {rgmii_rxd[*] rgmii_rx_ctl}]
 #set_input_delay -clock [get_clocks tri_mode_ethernet_mac_0_rgmii_rx_clk] -clock_fall -min -2.8 -add_delay [get_ports {rgmii_rxd[*] rgmii_rx_ctl}]
 
-# the following properties can be adjusted if requried to adjuct the IO timing
+# the following properties can be adjusted if requried to adjust the IO timing
 # the value shown (12) is the default used by the IP
 # increasing this value will improve the hold timing but will also add jitter.
 # set_property IDELAY_VALUE 12 [get_cells -hier -filter {name =~ *trimac_fifo_block/trimac_sup_block/tri_mode_ethernet_mac_i/*/rgmii_interface/delay_rgmii_rx* *trimac_fifo_block/trimac_sup_block/tri_mode_ethernet_mac_i/*/rgmii_interface/rxdata_bus[*].delay_rgmii_rx*}]
@@ -275,143 +275,10 @@ set_false_path -to [get_pins -of_objects [get_cells -hierarchical -filter {NAME 
 
 #>-- gigabit eth interface -->
 
-#<-- FMC112 --<
-
-# I2C Location assignments (KC705 pinout, connects to FMC connectors)
-set_property PACKAGE_PIN K21 [get_ports I2C_SCL]
+set_property PACKAGE_PIN K21     [get_ports I2C_SCL]
 set_property IOSTANDARD LVCMOS25 [get_ports I2C_SCL]
-set_property PACKAGE_PIN L21 [get_ports I2C_SDA]
+set_property PACKAGE_PIN L21     [get_ports I2C_SDA]
 set_property IOSTANDARD LVCMOS25 [get_ports I2C_SDA]
-# FMC signals (FMC112 on KC705 LPC)
-set_property PACKAGE_PIN AG23 [get_ports CLK_TO_FPGA_N_1]
-set_property PACKAGE_PIN AF22 [get_ports CLK_TO_FPGA_P_1]
-set_property PACKAGE_PIN AB29 [get_ports CTRL_1[0]]
-set_property IOSTANDARD LVCMOS25 [get_ports CTRL_1[0]]
-set_property SLEW SLOW [get_ports CTRL_1[0]]
-set_property PACKAGE_PIN AB30 [get_ports CTRL_1[1]]
-set_property IOSTANDARD LVCMOS25 [get_ports CTRL_1[1]]
-set_property SLEW SLOW [get_ports CTRL_1[1]]
-set_property PACKAGE_PIN AD29 [get_ports CTRL_1[2]]
-set_property IOSTANDARD LVCMOS25 [get_ports CTRL_1[2]]
-set_property SLEW SLOW [get_ports CTRL_1[2]]
-set_property PACKAGE_PIN AE29 [get_ports CTRL_1[3]]
-set_property IOSTANDARD LVCMOS25 [get_ports CTRL_1[3]]
-set_property SLEW SLOW [get_ports CTRL_1[3]]
-set_property PACKAGE_PIN Y30 [get_ports CTRL_1[4]]
-set_property IOSTANDARD LVCMOS25 [get_ports CTRL_1[4]]
-set_property SLEW SLOW [get_ports CTRL_1[4]]
-set_property PACKAGE_PIN AA30 [get_ports CTRL_1[5]]
-set_property IOSTANDARD LVCMOS25 [get_ports CTRL_1[5]]
-set_property SLEW SLOW [get_ports CTRL_1[5]]
-set_property PACKAGE_PIN AC29 [get_ports CTRL_1[6]]
-set_property IOSTANDARD LVCMOS25 [get_ports CTRL_1[6]]
-set_property SLEW SLOW [get_ports CTRL_1[6]]
-set_property PACKAGE_PIN AC30 [get_ports CTRL_1[7]]
-set_property IOSTANDARD LVCMOS25 [get_ports CTRL_1[7]]
-set_property SLEW SLOW [get_ports CTRL_1[7]]
-set_property PACKAGE_PIN AE24 [get_ports DCO_N_1[0]]
-set_property IOSTANDARD LVDS_25 [get_ports DCO_N_1[0]]
-set_property PACKAGE_PIN AF23 [get_ports DCO_N_1[1]]
-set_property IOSTANDARD LVDS_25 [get_ports DCO_N_1[1]]
-set_property PACKAGE_PIN AC27 [get_ports DCO_N_1[2]]
-set_property IOSTANDARD LVDS_25 [get_ports DCO_N_1[2]]
-set_property PACKAGE_PIN AD23 [get_ports DCO_P_1[0]]
-set_property IOSTANDARD LVDS_25 [get_ports DCO_P_1[0]]
-set_property PACKAGE_PIN AE23 [get_ports DCO_P_1[1]]
-set_property IOSTANDARD LVDS_25 [get_ports DCO_P_1[1]]
-set_property PACKAGE_PIN AB27 [get_ports DCO_P_1[2]]
-set_property IOSTANDARD LVDS_25 [get_ports DCO_P_1[2]]
-set_property PACKAGE_PIN AK21 [get_ports FRAME_N_1[0]]
-set_property PACKAGE_PIN AD28 [get_ports FRAME_N_1[1]]
-set_property PACKAGE_PIN AD26 [get_ports FRAME_N_1[2]]
-set_property PACKAGE_PIN AK20 [get_ports FRAME_P_1[0]]
-set_property PACKAGE_PIN AD27 [get_ports FRAME_P_1[1]]
-set_property PACKAGE_PIN AC26 [get_ports FRAME_P_1[2]]
-set_property PACKAGE_PIN AK24 [get_ports OUTA_N_1[0]]
-set_property PACKAGE_PIN AH25 [get_ports OUTA_N_1[1]]
-set_property PACKAGE_PIN AJ21 [get_ports OUTA_N_1[2]]
-set_property PACKAGE_PIN AF21 [get_ports OUTA_N_1[3]]
-set_property PACKAGE_PIN AK26 [get_ports OUTA_N_1[4]]
-set_property PACKAGE_PIN AD24 [get_ports OUTA_N_1[5]]
-set_property PACKAGE_PIN AC25 [get_ports OUTA_N_1[6]]
-set_property PACKAGE_PIN AF25 [get_ports OUTA_N_1[7]]
-set_property PACKAGE_PIN AF30 [get_ports OUTA_N_1[8]]
-set_property PACKAGE_PIN AK30 [get_ports OUTA_N_1[9]]
-set_property PACKAGE_PIN AH27 [get_ports OUTA_N_1[10]]
-set_property PACKAGE_PIN AG28 [get_ports OUTA_N_1[11]]
-set_property PACKAGE_PIN AK23 [get_ports OUTA_P_1[0]]
-set_property PACKAGE_PIN AG25 [get_ports OUTA_P_1[1]]
-set_property PACKAGE_PIN AH21 [get_ports OUTA_P_1[2]]
-set_property PACKAGE_PIN AF20 [get_ports OUTA_P_1[3]]
-set_property PACKAGE_PIN AJ26 [get_ports OUTA_P_1[4]]
-set_property PACKAGE_PIN AC24 [get_ports OUTA_P_1[5]]
-set_property PACKAGE_PIN AB24 [get_ports OUTA_P_1[6]]
-set_property PACKAGE_PIN AE25 [get_ports OUTA_P_1[7]]
-set_property PACKAGE_PIN AE30 [get_ports OUTA_P_1[8]]
-set_property PACKAGE_PIN AK29 [get_ports OUTA_P_1[9]]
-set_property PACKAGE_PIN AH26 [get_ports OUTA_P_1[10]]
-set_property PACKAGE_PIN AG27 [get_ports OUTA_P_1[11]]
-set_property PACKAGE_PIN AK25 [get_ports OUTB_N_1[0]]
-set_property PACKAGE_PIN AJ23 [get_ports OUTB_N_1[1]]
-set_property PACKAGE_PIN AH22 [get_ports OUTB_N_1[2]]
-set_property PACKAGE_PIN AH20 [get_ports OUTB_N_1[3]]
-set_property PACKAGE_PIN AF27 [get_ports OUTB_N_1[4]]
-set_property PACKAGE_PIN AD22 [get_ports OUTB_N_1[5]]
-set_property PACKAGE_PIN AE21 [get_ports OUTB_N_1[6]]
-set_property PACKAGE_PIN AB20 [get_ports OUTB_N_1[7]]
-set_property PACKAGE_PIN AF28 [get_ports OUTB_N_1[8]]
-set_property PACKAGE_PIN AJ29 [get_ports OUTB_N_1[9]]
-set_property PACKAGE_PIN AH30 [get_ports OUTB_N_1[10]]
-set_property PACKAGE_PIN AK28 [get_ports OUTB_N_1[11]]
-set_property PACKAGE_PIN AJ24 [get_ports OUTB_P_1[0]]
-set_property PACKAGE_PIN AJ22 [get_ports OUTB_P_1[1]]
-set_property PACKAGE_PIN AG22 [get_ports OUTB_P_1[2]]
-set_property PACKAGE_PIN AG20 [get_ports OUTB_P_1[3]]
-set_property PACKAGE_PIN AF26 [get_ports OUTB_P_1[4]]
-set_property PACKAGE_PIN AC22 [get_ports OUTB_P_1[5]]
-set_property PACKAGE_PIN AD21 [get_ports OUTB_P_1[6]]
-set_property PACKAGE_PIN AA20 [get_ports OUTB_P_1[7]]
-set_property PACKAGE_PIN AE28 [get_ports OUTB_P_1[8]]
-set_property PACKAGE_PIN AJ28 [get_ports OUTB_P_1[9]]
-set_property PACKAGE_PIN AG30 [get_ports OUTB_P_1[10]]
-set_property PACKAGE_PIN AJ27 [get_ports OUTB_P_1[11]]
-set_property PACKAGE_PIN AH29 [get_ports EXT_TRIGGER_N_1]
-set_property PACKAGE_PIN AG29 [get_ports EXT_TRIGGER_P_1]
-set_property PACKAGE_PIN J22 [get_ports PRSNT_M2C_L_1]
-set_property IOSTANDARD LVCMOS25 [get_ports PRSNT_M2C_L_1]
-set_property SLEW SLOW [get_ports PRSNT_M2C_L_1]
-
-# clocks
-create_clock -name dco0_clock -period 2.0 [get_ports {DCO_P_1[0]}]
-create_clock -name dco1_clock -period 2.0 [get_ports {DCO_P_1[1]}]
-create_clock -name dco2_clock -period 2.0 [get_ports {DCO_P_1[2]}]
-create_clock -name clk_to_fpga_clock -period 2.0 [get_ports {CLK_TO_FPGA_P_1}]
-set_clock_groups -asynchronous -group [get_clocks -include_generated_clocks clk_to_fpga_clock] -group [get_clocks -include_generated_clocks sgmii_clock]
-
-# SPI
-#create_clock -name spi_clock -period 256.0 [get_ports {CTRL_1[0]}]
-#create_clock -name spi_clock -period 256.0
-#set_output_delay -clock spi_clock 10.0 [get_ports {CTRL_1[0]}]
-#set_output_delay -clock spi_clock 10.0 [get_ports {CTRL_1[1]}] -clock_fall
-#set_output_delay -clock spi_clock 10.0 [get_ports {CTRL_1[2]}] -clock_fall
-#set_input_delay  -clock spi_clock 10.0 [get_ports {CTRL_1[2]}] -clock_fall
-
-# iodelay
-set_property IODELAY_GROUP fmc112_iodelay_grp [get_cells -hier -filter {name =~ *ltc2175_phy_inst*iodelay_bus}]
-set_property IODELAY_GROUP fmc112_iodelay_grp [get_cells -hier -filter {name =~ *fmc112_inst*idelayctrl_inst}]
-
-# gtx
-# create_clock -name q0_clk1_refclk_i -period 8.0 [get_pins -hier -filter {NAME =~ */q0_clk1_refclk_i}]
-# create_clock -name gt0_txusrclk_i   -period 3.2 [get_pins -hier -filter {NAME =~ */gt0_txusrclk_i}]
-# create_clock -name gt0_txusrclk2_i  -period 6.4 [get_pins -hier -filter {NAME =~ */gt0_txusrclk2_i}]
-# set_property LOC GTXE2_CHANNEL_X0Y8 [get_cells -hierarchical -filter {NAME =~ */k7_gtxwizard_v1_6_*/gt0_k7_gtxwizard_v1_6_*/gtxe2_i}]
-
-# false paths
-set_false_path -from [get_pins -of_objects [get_cells -hierarchical -filter {NAME =~ *p2p_trigger_inst*outreset_reg}] -filter {NAME =~ *C}]
-set_false_path -from [get_pins -of_objects [get_cells -hierarchical -filter {NAME =~ *pulse2pulse*outreset_reg}] -filter {NAME =~ *C}]
-set_false_path -to [get_pins -of_objects [get_cells -hierarchical -filter {NAME =~ *channel_avg_inst*trig_prev_reg}] -filter {NAME =~ *D}]
-
-#>-- FMC112 -->
 
 # Local Variables:
 # mode: tcl
