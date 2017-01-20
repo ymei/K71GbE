@@ -76,7 +76,7 @@ PACKAGE utility IS
     PORT (
       RESET     : IN  std_logic;
       CLK       : IN  std_logic;
-      -- high 4-bit is offset, 2**(low 4-bit) is number of points to average    
+      -- high 4-bit is offset, 2**(low 4-bit) is number of points to average
       CONFIG    : IN  std_logic_vector(7 DOWNTO 0);
       TRIG      : IN  std_logic;
       INDATA_Q  : IN  std_logic_vector(INDATA_WIDTH-1 DOWNTO 0);

@@ -80,17 +80,23 @@ ENTITY top IS
     DDR3_CS_N        : OUT   std_logic_vector(0 DOWNTO 0);
     DDR3_DM          : OUT   std_logic_vector(7 DOWNTO 0);
     DDR3_ODT         : OUT   std_logic_vector(0 DOWNTO 0);
-    --
+    -- FMC LPC FMC112
     I2C_SCL          : INOUT std_logic;
     I2C_SDA          : INOUT std_logic;
-    -- FMC HPC
-    FMC_HPC_HA_P     :INOUT    std_logic_vector(23 DOWNTO 0);
-    FMC_HPC_HA_N     :INOUT    std_logic_vector(23 DOWNTO 0);
-    FMC_HPC_LA_P     :INOUT    std_logic_vector(33 DOWNTO 0);
-    FMC_HPC_LA_N     :INOUT    std_logic_vector(33 DOWNTO 0);
-    -- FMC LPC
-    FMC_LPC_LA_P     :INOUT    std_logic_vector(33 DOWNTO 0);
-    FMC_LPC_LA_N     :INOUT    std_logic_vector(33 DOWNTO 0)
+    CTRL_1           : INOUT std_logic_vector(7 DOWNTO 0);
+    CLK_TO_FPGA_P_1  : IN    std_logic;
+    CLK_TO_FPGA_N_1  : IN    std_logic;
+    EXT_TRIGGER_P_1  : IN    std_logic;
+    EXT_TRIGGER_N_1  : IN    std_logic;
+    OUTA_P_1         : IN    std_logic_vector(11 DOWNTO 0);
+    OUTA_N_1         : IN    std_logic_vector(11 DOWNTO 0);
+    OUTB_P_1         : IN    std_logic_vector(11 DOWNTO 0);
+    OUTB_N_1         : IN    std_logic_vector(11 DOWNTO 0);
+    DCO_P_1          : IN    std_logic_vector(2 DOWNTO 0);
+    DCO_N_1          : IN    std_logic_vector(2 DOWNTO 0);
+    FRAME_P_1        : IN    std_logic_vector(2 DOWNTO 0);
+    FRAME_N_1        : IN    std_logic_vector(2 DOWNTO 0);
+    PRSNT_M2C_L_1    : IN    std_logic
   );
 END top;
 
@@ -257,7 +263,7 @@ ARCHITECTURE Behavioral OF top IS
     );
   END COMPONENT;
   ---------------------------------------------> gig_eth
-  ---------------------------------------------< UART/RS232
+  ---------------------------------------------< control_interface
   COMPONENT control_interface
     PORT (
       RESET           : IN  std_logic;
@@ -287,7 +293,7 @@ ARCHITECTURE Behavioral OF top IS
       DATA_FIFO_RDCLK : OUT std_logic
     );
   END COMPONENT;
-  ---------------------------------------------> UART/RS232
+  ---------------------------------------------> control_interface
   ---------------------------------------------< SDRAM
   COMPONENT sdram_ddr3
     GENERIC (
@@ -363,6 +369,57 @@ ARCHITECTURE Behavioral OF top IS
     );
   END COMPONENT;
   ---------------------------------------------> SDRAM
+  ---------------------------------------------< FMC112
+  COMPONENT kc705_fmc112
+    PORT (
+      RESET           : IN    std_logic;
+      CLK125          : IN    std_logic;
+      CLK200          : IN    std_logic;
+      GPIO_LED        : OUT   std_logic_vector(3 DOWNTO 0);
+      --SIP commands
+      CMD_OUT         : OUT   std_logic_vector(63 DOWNTO 0);
+      CMD_OUT_VAL     : OUT   std_logic;
+      CMD_IN          : IN    std_logic_vector(63 DOWNTO 0);
+      CMD_IN_VAL      : IN    std_logic;
+      --STAR sip_i2c_master, ID=0 (ext_i2c)
+      I2C_SCL_0       : INOUT std_logic;
+      I2C_SDA_0       : INOUT std_logic;
+      --STAR sip_fmc_ct_gen, ID=0 (ext_fmc_ct_gen)
+      TRIG_OUT_0      : OUT   std_logic;
+      --STAR sip_fmc112, ID=1 (ext_fmc112)
+      CTRL_1          : INOUT std_logic_vector(7 DOWNTO 0);
+      CLK_TO_FPGA_P_1 : IN    std_logic;
+      CLK_TO_FPGA_N_1 : IN    std_logic;
+      EXT_TRIGGER_P_1 : IN    std_logic;
+      EXT_TRIGGER_N_1 : IN    std_logic;
+      EXT_TRIGGER     : OUT   std_logic;
+      OUTA_P_1        : IN    std_logic_vector(11 DOWNTO 0);
+      OUTA_N_1        : IN    std_logic_vector(11 DOWNTO 0);
+      OUTB_P_1        : IN    std_logic_vector(11 DOWNTO 0);
+      OUTB_N_1        : IN    std_logic_vector(11 DOWNTO 0);
+      DCO_P_1         : IN    std_logic_vector(2 DOWNTO 0);
+      DCO_N_1         : IN    std_logic_vector(2 DOWNTO 0);
+      FRAME_P_1       : IN    std_logic_vector(2 DOWNTO 0);
+      FRAME_N_1       : IN    std_logic_vector(2 DOWNTO 0);
+      PG_M2C_1        : IN    std_logic;
+      PRSNT_M2C_L_1   : IN    std_logic;
+      --ADC data
+      phy_data_clk    : OUT   std_logic;                      -- ADC data clk
+      phy_out_data0   : OUT   std_logic_vector(15 DOWNTO 0);  -- 1 sample, 16-bit format
+      phy_out_data1   : OUT   std_logic_vector(15 DOWNTO 0);
+      phy_out_data2   : OUT   std_logic_vector(15 DOWNTO 0);
+      phy_out_data3   : OUT   std_logic_vector(15 DOWNTO 0);
+      phy_out_data4   : OUT   std_logic_vector(15 DOWNTO 0);
+      phy_out_data5   : OUT   std_logic_vector(15 DOWNTO 0);
+      phy_out_data6   : OUT   std_logic_vector(15 DOWNTO 0);
+      phy_out_data7   : OUT   std_logic_vector(15 DOWNTO 0);
+      phy_out_data8   : OUT   std_logic_vector(15 DOWNTO 0);
+      phy_out_data9   : OUT   std_logic_vector(15 DOWNTO 0);
+      phy_out_data10  : OUT   std_logic_vector(15 DOWNTO 0);
+      phy_out_data11  : OUT   std_logic_vector(15 DOWNTO 0)
+    );
+  END COMPONENT;
+  ---------------------------------------------> FMC112
   ---------------------------------------------< debug : ILA and VIO (`Chipscope')
   COMPONENT dbg_ila
     PORT (
@@ -505,48 +562,48 @@ ARCHITECTURE Behavioral OF top IS
   SIGNAL sdram_app_rd_data                 : std_logic_vector(512-1 DOWNTO 0);
   SIGNAL sdram_app_rd_data_valid           : std_logic;
   ---------------------------------------------> SDRAM
-  ---------------------------------------------< IDATA
+  ---------------------------------------------< FMC112
   SIGNAL TRIG_OUT_0                        : std_logic;
-  SIGNAL idata_cmd_out                     : std_logic_vector(63 DOWNTO 0);
-  SIGNAL idata_cmd_out_val                 : std_logic;
-  SIGNAL idata_cmd_in                      : std_logic_vector(63 DOWNTO 0);
-  SIGNAL idata_cmd_in_val                  : std_logic;
-  SIGNAL idata_adc_data_clk                : std_logic;
-  SIGNAL idata_adc_refout_clkdiv           : std_logic;
-  SIGNAL idata_adc_data0                   : std_logic_vector(15 DOWNTO 0);
-  SIGNAL idata_adc_data1                   : std_logic_vector(15 DOWNTO 0);
-  SIGNAL idata_adc_data2                   : std_logic_vector(15 DOWNTO 0);
-  SIGNAL idata_adc_data3                   : std_logic_vector(15 DOWNTO 0);
-  SIGNAL idata_adc_data4                   : std_logic_vector(15 DOWNTO 0);
-  SIGNAL idata_adc_data5                   : std_logic_vector(15 DOWNTO 0);
-  SIGNAL idata_adc_data6                   : std_logic_vector(15 DOWNTO 0);
-  SIGNAL idata_adc_data7                   : std_logic_vector(15 DOWNTO 0);
-  SIGNAL idata_adc_data8                   : std_logic_vector(15 DOWNTO 0);
-  SIGNAL idata_adc_data9                   : std_logic_vector(15 DOWNTO 0);
-  SIGNAL idata_adc_data10                  : std_logic_vector(15 DOWNTO 0);
-  SIGNAL idata_adc_data11                  : std_logic_vector(15 DOWNTO 0);
-  SIGNAL idata_data_fifo_reset             : std_logic;
-  SIGNAL idata_data_fifo_rdclk             : std_logic;
-  SIGNAL idata_data_fifo_din               : std_logic_vector(255 DOWNTO 0);
-  SIGNAL idata_channel_avg_outdata_q       : std_logic_vector(255 DOWNTO 0);
-  SIGNAL idata_channel_avg_outvalid        : std_logic;
-  SIGNAL idata_data_fifo_wren              : std_logic;
-  SIGNAL idata_data_fifo_rden              : std_logic;
-  SIGNAL idata_data_fifo_dout              : std_logic_vector(31 DOWNTO 0);
-  SIGNAL idata_data_fifo_full              : std_logic;
-  SIGNAL idata_data_fifo_empty             : std_logic;
-  SIGNAL idata_idata_fifo_q                : std_logic_vector(255 DOWNTO 0);
-  SIGNAL idata_idata_fifo_wren             : std_logic;
-  SIGNAL idata_idata_fifo_rden             : std_logic;
-  SIGNAL idata_idata_fifo_full             : std_logic;
-  SIGNAL idata_idata_fifo_empty            : std_logic;
-  SIGNAL idata_trig_allow                  : std_logic;
-  SIGNAL idata_trig_in                     : std_logic;
-  SIGNAL idata_trig_synced                 : std_logic;
-  SIGNAL idata_data_wr_start               : std_logic;
-  SIGNAL idata_data_wr_busy                : std_logic;
-  SIGNAL idata_data_wr_wrapped             : std_logic;
-  ---------------------------------------------> IDATA
+  SIGNAL fmc112_cmd_out                    : std_logic_vector(63 DOWNTO 0);
+  SIGNAL fmc112_cmd_out_val                : std_logic;
+  SIGNAL fmc112_cmd_in                     : std_logic_vector(63 DOWNTO 0);
+  SIGNAL fmc112_cmd_in_val                 : std_logic;
+  SIGNAL fmc112_adc_data_clk               : std_logic;
+  SIGNAL fmc112_adc_refout_clkdiv          : std_logic;
+  SIGNAL fmc112_adc_data0                  : std_logic_vector(15 DOWNTO 0);
+  SIGNAL fmc112_adc_data1                  : std_logic_vector(15 DOWNTO 0);
+  SIGNAL fmc112_adc_data2                  : std_logic_vector(15 DOWNTO 0);
+  SIGNAL fmc112_adc_data3                  : std_logic_vector(15 DOWNTO 0);
+  SIGNAL fmc112_adc_data4                  : std_logic_vector(15 DOWNTO 0);
+  SIGNAL fmc112_adc_data5                  : std_logic_vector(15 DOWNTO 0);
+  SIGNAL fmc112_adc_data6                  : std_logic_vector(15 DOWNTO 0);
+  SIGNAL fmc112_adc_data7                  : std_logic_vector(15 DOWNTO 0);
+  SIGNAL fmc112_adc_data8                  : std_logic_vector(15 DOWNTO 0);
+  SIGNAL fmc112_adc_data9                  : std_logic_vector(15 DOWNTO 0);
+  SIGNAL fmc112_adc_data10                 : std_logic_vector(15 DOWNTO 0);
+  SIGNAL fmc112_adc_data11                 : std_logic_vector(15 DOWNTO 0);
+  SIGNAL fmc112_data_fifo_reset            : std_logic;
+  SIGNAL fmc112_data_fifo_rdclk            : std_logic;
+  SIGNAL fmc112_data_fifo_din              : std_logic_vector(255 DOWNTO 0);
+  SIGNAL fmc112_channel_avg_outdata_q      : std_logic_vector(255 DOWNTO 0);
+  SIGNAL fmc112_channel_avg_outvalid       : std_logic;
+  SIGNAL fmc112_data_fifo_wren             : std_logic;
+  SIGNAL fmc112_data_fifo_rden             : std_logic;
+  SIGNAL fmc112_data_fifo_dout             : std_logic_vector(31 DOWNTO 0);
+  SIGNAL fmc112_data_fifo_full             : std_logic;
+  SIGNAL fmc112_data_fifo_empty            : std_logic;
+  SIGNAL fmc112_idata_fifo_q               : std_logic_vector(255 DOWNTO 0);
+  SIGNAL fmc112_idata_fifo_wren            : std_logic;
+  SIGNAL fmc112_idata_fifo_rden            : std_logic;
+  SIGNAL fmc112_idata_fifo_full            : std_logic;
+  SIGNAL fmc112_idata_fifo_empty           : std_logic;
+  SIGNAL fmc112_trig_allow                 : std_logic;
+  SIGNAL fmc112_trig_in                    : std_logic;
+  SIGNAL fmc112_trig_synced                : std_logic;
+  SIGNAL fmc112_data_wr_start              : std_logic;
+  SIGNAL fmc112_data_wr_busy               : std_logic;
+  SIGNAL fmc112_data_wr_wrapped            : std_logic;
+  ---------------------------------------------> FMC112
   ---------------------------------------------< debug
   SIGNAL dbg_ila_probe0                           : std_logic_vector (63 DOWNTO 0);
   SIGNAL dbg_ila_probe1                           : std_logic_vector (79 DOWNTO 0);
@@ -609,6 +666,10 @@ ARCHITECTURE Behavioral OF top IS
   ATTRIBUTE mark_debug OF sdram_app_wdf_rdy       : SIGNAL IS "true";
   ATTRIBUTE mark_debug OF sdram_app_rd_data       : SIGNAL IS "true";
   ATTRIBUTE mark_debug OF sdram_app_rd_data_valid : SIGNAL IS "true";
+  --
+  ATTRIBUTE mark_debug OF fmc112_cmd_out          : SIGNAL IS "true";
+  ATTRIBUTE mark_debug OF fmc112_cmd_out_val      : SIGNAL IS "true";
+  ATTRIBUTE mark_debug OF fmc112_cmd_in_val       : SIGNAL IS "true";
   ---------------------------------------------> debug
 
 BEGIN
@@ -669,7 +730,7 @@ BEGIN
       );
     --dbg_ila1_inst : dbg_ila1
     --  PORT MAP (
-    --    CLK    => sys_clk,
+    --    CLK    => fmc112_adc_data_clk,
     --    PROBE0 => dbg_ila1_probe0,
     --    PROBE1 => dbg_ila1_probe1
     --  );
@@ -743,10 +804,10 @@ BEGIN
       MEM_DIN         => control_mem_din,
       MEM_DOUT        => (OTHERS => '0'),
       -- Data FIFO interface, FWFT
-      DATA_FIFO_Q     => idata_data_fifo_dout,
-      DATA_FIFO_EMPTY => idata_data_fifo_empty,
-      DATA_FIFO_RDREQ => idata_data_fifo_rden,
-      DATA_FIFO_RDCLK => idata_data_fifo_rdclk
+      DATA_FIFO_Q     => fmc112_data_fifo_dout,
+      DATA_FIFO_EMPTY => fmc112_data_fifo_empty,
+      DATA_FIFO_RDREQ => fmc112_data_fifo_rden,
+      DATA_FIFO_RDCLK => fmc112_data_fifo_rdclk
     );
   dbg_ila_probe0(18 DOWNTO 3) <= pulse_reg;
   ---------------------------------------------> UART/RS232
@@ -1003,30 +1064,30 @@ BEGIN
       UI_CLK                => clk_200MHz,
       --
       CTRL_RESET            => pulse_reg(6),
-      WR_START              => idata_data_wr_start,
+      WR_START              => fmc112_data_wr_start,
       WR_ADDR_BEGIN         => config_reg(32*4+27 DOWNTO 32*4),
       WR_STOP               => pulse_reg(4),
       WR_WRAP_AROUND        => config_reg(32*4+28),
       POST_TRIGGER          => config_reg(32*5+27 DOWNTO 32*5),
-      WR_BUSY               => idata_data_wr_busy,
+      WR_BUSY               => fmc112_data_wr_busy,
       WR_POINTER            => OPEN,
       TRIGGER_POINTER       => status_reg(64*2+27 DOWNTO 64*2),
-      WR_WRAPPED            => idata_data_wr_wrapped,
+      WR_WRAPPED            => fmc112_data_wr_wrapped,
       RD_START              => pulse_reg(5),
       RD_ADDR_BEGIN         => (OTHERS => '0'),
       RD_ADDR_END           => config_reg(32*6+27 DOWNTO 32*6),
       RD_BUSY               => status_reg(64*2+30),
       --
-      DATA_FIFO_RESET       => idata_data_fifo_reset,
-      INDATA_FIFO_WRCLK     => idata_adc_data_clk,
-      INDATA_FIFO_Q         => idata_idata_fifo_q,
-      INDATA_FIFO_FULL      => idata_idata_fifo_full,
-      INDATA_FIFO_WREN      => idata_idata_fifo_wren,
+      DATA_FIFO_RESET       => fmc112_data_fifo_reset,
+      INDATA_FIFO_WRCLK     => fmc112_adc_data_clk,
+      INDATA_FIFO_Q         => fmc112_idata_fifo_q,
+      INDATA_FIFO_FULL      => fmc112_idata_fifo_full,
+      INDATA_FIFO_WREN      => fmc112_idata_fifo_wren,
       --
-      OUTDATA_FIFO_RDCLK    => idata_data_fifo_rdclk,
-      OUTDATA_FIFO_Q        => idata_data_fifo_dout,
-      OUTDATA_FIFO_EMPTY    => idata_data_fifo_empty,
-      OUTDATA_FIFO_RDEN     => idata_data_fifo_rden,
+      OUTDATA_FIFO_RDCLK    => fmc112_data_fifo_rdclk,
+      OUTDATA_FIFO_Q        => fmc112_data_fifo_dout,
+      OUTDATA_FIFO_EMPTY    => fmc112_data_fifo_empty,
+      OUTDATA_FIFO_RDEN     => fmc112_data_fifo_rden,
       --
       DBG_APP_ADDR          => sdram_app_addr,
       DBG_APP_EN            => sdram_app_en,
@@ -1038,40 +1099,40 @@ BEGIN
       DBG_APP_RD_DATA       => sdram_app_rd_data,
       DBG_APP_RD_DATA_VALID => sdram_app_rd_data_valid
     );
-  idata_data_fifo_reset <= pulse_reg(2);
-  status_reg(64*2+28)    <= idata_data_wr_busy;
-  status_reg(64*2+29)    <= idata_data_wr_wrapped;
+  fmc112_data_fifo_reset <= pulse_reg(2);
+  status_reg(64*2+28)    <= fmc112_data_wr_busy;
+  status_reg(64*2+29)    <= fmc112_data_wr_wrapped;
   --
   channel_sel_inst : channel_sel
     PORT MAP (
-      CLK             => idata_adc_data_clk,  -- fifo wrclk
+      CLK             => fmc112_adc_data_clk,  -- fifo wrclk
       RESET           => reset,
       SEL             => config_reg(32*7+7 DOWNTO 32*7),
       --
-      DATA_FIFO_RESET => idata_data_fifo_reset,
+      DATA_FIFO_RESET => fmc112_data_fifo_reset,
       --
-      INDATA_Q        => idata_channel_avg_outdata_q,
-      DATA_FIFO_WREN  => idata_data_fifo_wren,
-      DATA_FIFO_FULL  => idata_data_fifo_full,
+      INDATA_Q        => fmc112_channel_avg_outdata_q,
+      DATA_FIFO_WREN  => fmc112_data_fifo_wren,
+      DATA_FIFO_FULL  => fmc112_data_fifo_full,
       --
-      OUTDATA_FIFO_Q  => idata_idata_fifo_q,
-      DATA_FIFO_RDEN  => idata_idata_fifo_rden,
-      DATA_FIFO_EMPTY => idata_idata_fifo_empty
+      OUTDATA_FIFO_Q  => fmc112_idata_fifo_q,
+      DATA_FIFO_RDEN  => fmc112_idata_fifo_rden,
+      DATA_FIFO_EMPTY => fmc112_idata_fifo_empty
     );
-  idata_idata_fifo_rden <= NOT idata_idata_fifo_full;
-  idata_idata_fifo_wren <= NOT idata_idata_fifo_empty;
-  idata_data_fifo_wren  <= config_reg(32*6+31) AND idata_channel_avg_outvalid;
+  fmc112_idata_fifo_rden <= NOT fmc112_idata_fifo_full;
+  fmc112_idata_fifo_wren <= NOT fmc112_idata_fifo_empty;
+  fmc112_data_fifo_wren  <= config_reg(32*6+31) AND fmc112_channel_avg_outvalid;
   --
   channel_avg_inst : channel_avg
     PORT MAP (
       RESET           => reset,
-      CLK             => idata_adc_data_clk,
+      CLK             => fmc112_adc_data_clk,
       -- high 4-bit is offset, 2**(low 4-bit) is number of points to average    
       CONFIG          => config_reg(32*7+15 DOWNTO 32*7+8),
-      TRIG            => idata_data_wr_start,
-      INDATA_Q        => idata_data_fifo_din,
-      OUTVALID        => idata_channel_avg_outvalid,
-      OUTDATA_Q       => idata_channel_avg_outdata_q
+      TRIG            => fmc112_data_wr_start,
+      INDATA_Q        => fmc112_data_fifo_din,
+      OUTVALID        => fmc112_channel_avg_outvalid,
+      OUTDATA_Q       => fmc112_channel_avg_outdata_q
     );
   --
   dbg_ila_probe3(27 DOWNTO 0)               <= sdram_app_addr;
@@ -1085,38 +1146,111 @@ BEGIN
   dbg_ila_probe3(33)                        <= sdram_app_rd_data_valid;
   dbg_ila_probe3(511 DOWNTO 336)            <= status_reg;
   ---------------------------------------------> SDRAM
-
+  ---------------------------------------------< FMC112
+  kc705_fmc112_inst : kc705_fmc112
+    PORT MAP (
+      RESET           => reset,
+      CLK125          => clk_125MHz,
+      CLK200          => sys_clk,
+      GPIO_LED        => OPEN,
+      --SIP commands
+      CMD_OUT         => fmc112_cmd_out,
+      CMD_OUT_VAL     => fmc112_cmd_out_val,
+      CMD_IN          => fmc112_cmd_in,
+      CMD_IN_VAL      => fmc112_cmd_in_val,
+      --STAR sip_i2c_master, ID=0 (ext_i2c)
+      I2C_SCL_0       => I2C_SCL,
+      I2C_SDA_0       => I2C_SDA,
+      --STAR sip_fmc_ct_gen, ID=0 (ext_fmc_ct_gen)
+      TRIG_OUT_0      => TRIG_OUT_0,
+      --STAR sip_fmc112, ID=1 (ext_fmc112)
+      CTRL_1          => CTRL_1,
+      CLK_TO_FPGA_P_1 => CLK_TO_FPGA_P_1,
+      CLK_TO_FPGA_N_1 => CLK_TO_FPGA_N_1,
+      EXT_TRIGGER_P_1 => EXT_TRIGGER_P_1,
+      EXT_TRIGGER_N_1 => EXT_TRIGGER_N_1,
+      EXT_TRIGGER     => fmc112_trig_in,
+      OUTA_P_1        => OUTA_P_1,
+      OUTA_N_1        => OUTA_N_1,
+      OUTB_P_1        => OUTB_P_1,
+      OUTB_N_1        => OUTB_N_1,
+      DCO_P_1         => DCO_P_1,
+      DCO_N_1         => DCO_N_1,
+      FRAME_P_1       => FRAME_P_1,
+      FRAME_N_1       => FRAME_N_1,
+      PG_M2C_1        => '0',
+      PRSNT_M2C_L_1   => PRSNT_M2C_L_1,
+      --ADC Data
+      PHY_DATA_CLK    => fmc112_adc_data_clk,
+      PHY_OUT_DATA0   => fmc112_adc_data0,
+      PHY_OUT_DATA1   => fmc112_adc_data1,
+      PHY_OUT_DATA2   => fmc112_adc_data2,
+      PHY_OUT_DATA3   => fmc112_adc_data3,
+      PHY_OUT_DATA4   => fmc112_adc_data4,
+      PHY_OUT_DATA5   => fmc112_adc_data5,
+      PHY_OUT_DATA6   => fmc112_adc_data6,
+      PHY_OUT_DATA7   => fmc112_adc_data7,
+      PHY_OUT_DATA8   => fmc112_adc_data8,
+      PHY_OUT_DATA9   => fmc112_adc_data9,
+      PHY_OUT_DATA10  => fmc112_adc_data10,
+      PHY_OUT_DATA11  => fmc112_adc_data11
+    );
+  fmc112_cmd_in <= config_reg(64*2-1 DOWNTO 64*1);
+  fmc112_cmd_in_val_sync : pulse2pulse
+    PORT MAP (
+      IN_CLK   => control_clk,
+      OUT_CLK  => clk_125MHz,
+      RST      => reset,
+      PULSEIN  => pulse_reg(1),
+      INBUSY   => OPEN,
+      PULSEOUT => fmc112_cmd_in_val
+    );
+  PROCESS (clk_125MHz) IS
+  BEGIN
+    IF falling_edge(clk_125MHz) THEN  -- register for status_reg to read it
+      IF fmc112_cmd_out_val = '1' THEN
+        status_reg(64*2-1 DOWNTO 64*1) <= fmc112_cmd_out;
+      END IF;
+    END IF;
+  END PROCESS;
+  --
+  fmc112_data_fifo_din <= x"3000020000100000" & fmc112_adc_data11 & fmc112_adc_data10
+                          & fmc112_adc_data9  & fmc112_adc_data8  & fmc112_adc_data7
+                          & fmc112_adc_data6  & fmc112_adc_data5  & fmc112_adc_data4
+                          & fmc112_adc_data3  & fmc112_adc_data2  & fmc112_adc_data1
+                          & fmc112_adc_data0;
   -- clock output
   refout_clk_div_inst : clk_div
     PORT MAP (
       RESET   => reset,
-      CLK     => idata_adc_data_clk,
+      CLK     => fmc112_adc_data_clk,
       DIV     => config_reg(16*15+3 DOWNTO 16*15),
-      CLK_DIV => idata_adc_refout_clkdiv
+      CLK_DIV => fmc112_adc_refout_clkdiv
     );
-  clk_fwd_inst : clk_fwd
-    PORT MAP (R => reset, I => idata_adc_refout_clkdiv, O => USER_SMA_CLOCK_P);
-  clk_fwd_inst1 : clk_fwd GENERIC MAP (INV => true)
-    PORT MAP (R => reset, I => idata_adc_refout_clkdiv, O => USER_SMA_CLOCK_N);
-  clk_fwd_inst2 : clk_fwd GENERIC MAP (INV => true)
-    PORT MAP (R => reset, I => idata_adc_data_clk, O => USER_SMA_GPIO_N);
+  clk_fwd_inst  : clk_fwd
+    PORT MAP (R=>reset, I=>fmc112_adc_refout_clkdiv, O=>USER_SMA_CLOCK_P);
+  clk_fwd_inst1 : clk_fwd GENERIC MAP (INV=>true)
+    PORT MAP (R=>reset, I=>fmc112_adc_refout_clkdiv, O=>USER_SMA_CLOCK_N);
+  clk_fwd_inst2 : clk_fwd GENERIC MAP (INV=>true)
+    PORT MAP (R=>reset, I=>fmc112_adc_data_clk, O=>USER_SMA_GPIO_N);
 
   -- capture the rising edge of trigger
   trig_edge_sync_inst : edge_sync
     PORT MAP (
       RESET => reset,
       CLK   => control_clk,
-      EI    => idata_trig_in,
-      SO    => idata_trig_synced
+      EI    => fmc112_trig_in,
+      SO    => fmc112_trig_synced
     );
-  idata_trig_allow    <= config_reg(32*6+30);
-  idata_data_wr_start <= pulse_reg(3) OR (idata_trig_synced AND idata_trig_allow
-                                          AND (NOT idata_data_wr_busy)
-                                          AND (NOT idata_data_wr_wrapped));
-  USER_SMA_GPIO_P <= idata_trig_synced;
+  fmc112_trig_allow    <= config_reg(32*6+30);
+  fmc112_data_wr_start <= pulse_reg(3) OR (fmc112_trig_synced AND fmc112_trig_allow
+                                           AND (NOT fmc112_data_wr_busy)
+                                           AND (NOT fmc112_data_wr_wrapped));
+  USER_SMA_GPIO_P      <= fmc112_trig_synced;
 
-  dbg_ila1_probe0 <= idata_adc_data0;
-  dbg_ila1_probe1 <= idata_adc_data4;
+  dbg_ila1_probe0 <= fmc112_adc_data0;
+  dbg_ila1_probe1 <= fmc112_adc_data4;
+  ---------------------------------------------> FMC112
 
   --led_obufs : FOR i IN 0 TO 7 GENERATE
   --  led_obuf : OBUF
@@ -1126,5 +1260,5 @@ BEGIN
   --    );
   --END GENERATE led_obufs;
   --LED8Bit(5 DOWNTO 1) <= (OTHERS => '0');
-  
+
 END Behavioral;
