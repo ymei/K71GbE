@@ -316,18 +316,20 @@ architecture wrapper of gig_eth is
       TP      : OUT std_logic_vector(10 DOWNTO 1)
     );
   END COMPONENT;
-
+  -- Must have programmable full with single-threshold of 61
+  -- out of total write-depth 64
   COMPONENT fifo8to32
     PORT (
-      rst    : IN  std_logic;
-      wr_clk : IN  std_logic;
-      rd_clk : IN  std_logic;
-      din    : IN  std_logic_vector(7 DOWNTO 0);
-      wr_en  : IN  std_logic;
-      rd_en  : IN  std_logic;
-      dout   : OUT std_logic_vector(31 DOWNTO 0);
-      full   : OUT std_logic;
-      empty  : OUT std_logic
+      rst       : IN  std_logic;
+      wr_clk    : IN  std_logic;
+      rd_clk    : IN  std_logic;
+      din       : IN  std_logic_vector(7 DOWNTO 0);
+      wr_en     : IN  std_logic;
+      rd_en     : IN  std_logic;
+      dout      : OUT std_logic_vector(31 DOWNTO 0);
+      full      : OUT std_logic;
+      prog_full : OUT std_logic;
+      empty     : OUT std_logic
     );
   END COMPONENT;
 
@@ -629,34 +631,34 @@ architecture wrapper of gig_eth is
   signal enable_phy_loopback                 : std_logic := '0';
 
   -- tcp
-  SIGNAL tcp_mac_addr        : std_logic_vector(47 DOWNTO 0);
-  SIGNAL tcp_ipv4_addr       : std_logic_vector(31 DOWNTO 0);
-  SIGNAL tcp_ipv6_addr       : std_logic_vector(127 DOWNTO 0);
-  SIGNAL tcp_subnet_mask     : std_logic_vector(31 DOWNTO 0);
-  SIGNAL tcp_gateway_ip_addr : std_logic_vector(31 DOWNTO 0);
-  
-  SIGNAL mac_rx_sof        : std_logic;
-  SIGNAL tcp_rx_data       : std_logic_vector(7 DOWNTO 0);
-  SIGNAL tcp_rx_data_valid : std_logic;
-  SIGNAL tcp_rx_rts        : std_logic;
-  SIGNAL tcp_rx_cts        : std_logic;
-  SIGNAL tcp_tx_data       : std_logic_vector(7 DOWNTO 0);
-  SIGNAL tcp_tx_data_valid : std_logic;
-  SIGNAL tcp_tx_cts        : std_logic;
-
+  SIGNAL tcp_mac_addr             : std_logic_vector(47 DOWNTO 0);
+  SIGNAL tcp_ipv4_addr            : std_logic_vector(31 DOWNTO 0);
+  SIGNAL tcp_ipv6_addr            : std_logic_vector(127 DOWNTO 0);
+  SIGNAL tcp_subnet_mask          : std_logic_vector(31 DOWNTO 0);
+  SIGNAL tcp_gateway_ip_addr      : std_logic_vector(31 DOWNTO 0);
+  --
+  SIGNAL mac_rx_sof               : std_logic;
+  SIGNAL tcp_rx_data              : std_logic_vector(7 DOWNTO 0);
+  SIGNAL tcp_rx_data_valid        : std_logic;
+  SIGNAL tcp_rx_rts               : std_logic;
+  SIGNAL tcp_rx_cts               : std_logic;
+  SIGNAL tcp_tx_data              : std_logic_vector(7 DOWNTO 0);
+  SIGNAL tcp_tx_data_valid        : std_logic;
+  SIGNAL tcp_tx_cts               : std_logic;
+  --
   SIGNAL tcp_rx_data_slv8x        : SLV8xNTCPSTREAMStype;
   SIGNAL tcp_tx_data_slv8x        : SLV8xNTCPSTREAMStype;
   SIGNAL tcp_rx_data_valid_vector : std_logic_vector((NTCPSTREAMS-1) DOWNTO 0);
   SIGNAL tcp_tx_cts_vector        : std_logic_vector((NTCPSTREAMS-1) DOWNTO 0);
-
-  SIGNAL rx_fifo_full  : std_logic;
-  SIGNAL tx_fifo_dout  : std_logic_vector(7 DOWNTO 0);
-  SIGNAL tx_fifo_rden  : std_logic;
-  SIGNAL tx_fifo_empty : std_logic;
-
   --
-  SIGNAL connection_reset_v  : std_logic_vector((NTCPSTREAMS-1) DOWNTO 0);
-  SIGNAL tcp_tx_data_valid_v : std_logic_vector((NTCPSTREAMS-1) DOWNTO 0);
+  SIGNAL rx_fifo_full             : std_logic;
+  SIGNAL rx_fifo_fullm3           : std_logic;
+  SIGNAL tx_fifo_dout             : std_logic_vector(7 DOWNTO 0);
+  SIGNAL tx_fifo_rden             : std_logic;
+  SIGNAL tx_fifo_empty            : std_logic;
+  --
+  SIGNAL connection_reset_v       : std_logic_vector((NTCPSTREAMS-1) DOWNTO 0);
+  SIGNAL tcp_tx_data_valid_v      : std_logic_vector((NTCPSTREAMS-1) DOWNTO 0);
   
   ------------------------------------------------------------------------------
   -- Begin architecture
@@ -1018,19 +1020,25 @@ begin
        TP      => OPEN
      );
 
+   -- Must have programmable full with single-threshold of 61
+   -- out of total write-depth 64.
+   -- When RX_CTS is low, the Server continues to drive out 3 more bytes of data
+   -- (observed with ILA).  The fifo must be able to accept them, hence the use
+   -- of prog_full.
    rx_fifo_inst : fifo8to32
      PORT MAP (
-       rst    => glbl_rst_int,
-       wr_clk => gtx_clk_bufg,
-       rd_clk => RX_FIFO_RDCLK,
-       din    => tcp_rx_data,
-       wr_en  => tcp_rx_data_valid,
-       rd_en  => RX_FIFO_RDEN,
-       dout   => RX_FIFO_Q,
-       full   => rx_fifo_full,
-       empty  => RX_FIFO_EMPTY
+       rst       => glbl_rst_int,
+       wr_clk    => gtx_clk_bufg,
+       rd_clk    => RX_FIFO_RDCLK,
+       din       => tcp_rx_data,
+       wr_en     => tcp_rx_data_valid,
+       rd_en     => RX_FIFO_RDEN,
+       dout      => RX_FIFO_Q,
+       full      => rx_fifo_full,
+       prog_full => rx_fifo_fullm3,     -- asserted at (full-3) writes
+       empty     => RX_FIFO_EMPTY
      );
-   tcp_rx_cts <= (NOT rx_fifo_full) WHEN TCP_USE_FIFO = '1' ELSE
+   tcp_rx_cts <= (NOT rx_fifo_fullm3) WHEN TCP_USE_FIFO = '1' ELSE
                  RX_TREADY;
    RX_TDATA   <= tcp_rx_data;
    RX_TVALID  <= tcp_rx_data_valid;
