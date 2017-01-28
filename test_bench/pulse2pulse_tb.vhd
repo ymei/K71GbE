@@ -1,23 +1,9 @@
-----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
--- 
--- Create Date: 03/29/2014 07:39:31 PM
--- Design Name: 
--- Module Name: pulse2pulse_tb - Behavioral
--- Project Name: 
--- Target Devices: 
--- Tool Versions: 
--- Description: 
--- 
--- Dependencies: 
--- 
--- Revision:
--- Revision 0.01 - File Created
--- Additional Comments:
--- 
-----------------------------------------------------------------------------------
-
+--------------------------------------------------------------------------------
+--! @file pulse2pulse_tb.vhd
+--! @brief Testbench for pulse clock-domain crossing module pulse2pulse
+--! @author Yuan Mei
+--!
+--------------------------------------------------------------------------------
 
 LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
@@ -63,7 +49,7 @@ BEGIN
   -- Instantiate the Unit Under Test (UUT)
   uut : pulse2pulse
     PORT MAP (
-      IN_CLK   => OUT_CLK,
+      IN_CLK   => CLK,
       OUT_CLK  => OUT_CLK,
       RST      => RESET,
       PULSEIN  => PULSEIN,

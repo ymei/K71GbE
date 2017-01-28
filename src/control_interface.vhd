@@ -1,55 +1,51 @@
--- $Id$
--------------------------------------------------------------------------------
--- Title      : Control Interface
--- Project    : HFT PXL
--------------------------------------------------------------------------------
--- File       : control_interface.vhd
--- Author     : JS  <jschamba@physics.utexas.edu>
--- Company    : University of Texas at Austin
--- Created    : 2013-06-12
--- Last update: 2013-10-25
--- Platform   : Windows, Xilinx PlanAhead 14.5
--- Target     : Virtex 6 (XC6VLX240T-FF1759)
--- Standard   : VHDL'93/02
--------------------------------------------------------------------------------
--- Description: Read words from command FIFO and interpret
---              This defines some example interfaces at different addresses:
---              Address 32 - 63:         16bit Configuration registers
---                              These registers can be written and read.
---                              Could be used to define operations parameters
---              Address 11:             16bit Pulse REGISTER
---                              This register generates a pulse at the bits
---                              set to 1 that is 3 clocks wide
---                              Could be used to start some action, e.g. jtag
---              Address 0 - 10:        16bit Status registers
---                              These are read-only.
---                              Can be used to read the status of some external
---                              device, .e.g an ADC, or input pins.
---              Address 16 - 20:        32bit memory interface
---                              The idea is to write an address into 17 (LSB)
---                              and 18 (MSB)
---                              Then write the LSB16 into 19, and finally
---                              the  MSB16 into 20. On write to 20, the 32bit
---                              data in 19 and 20 is written to the memory, AND
---                              the address is auto-incremented, so that the NEXT
---                              write seuqence doesn't need to re-write the address.
---                              A Read on 20 reads the current address and returns
---                              a 32bit data word into the FIFO, then increases
---                              the memory. This read is repeated n times, where
---                              "n" is the 16bit value at address 16.
---              Address 25:     This address initiates a read from the DATA_FIFO
---                              The value writen n indicated the number of
---                              words to copy from the DATA_FIFO to the FIFO
---                              (fifo to the USB interface)
--------------------------------------------------------------------------------
--- Copyright (c) 2013 
--------------------------------------------------------------------------------
--- Revisions  :
--- Date        Version  Author          Description
--- 2013-06-12  1.0      jschamba        Created
--- 2013-10-21  1.1      thorsten        changed memory address space to 32 bit
---                                      added an interface to read a data fifo
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+--! @file control_interface.vhd
+--! @brief Control Interface
+--! \verbatim
+--! Author     : JS  <jschamba@physics.utexas.edu>
+--! Company    : University of Texas at Austin
+--! Created    : 2013-06-12
+--! Last update: 2016-12-25
+--! Description: Read words from command FIFO and interpret
+--!              This defines some example interfaces at different addresses:
+--!              Address 32 - 63:         16bit Configuration registers
+--!                              These registers can be written and read.
+--!                              Could be used to define operations parameters
+--!              Address 11:             16bit Pulse REGISTER
+--!                              This register generates a pulse at the bits
+--!                              set to 1 that is 3 clocks wide
+--!                              Could be used to start some action, e.g. jtag
+--!              Address 0 - 10:        16bit Status registers
+--!                              These are read-only.
+--!                              Can be used to read the status of some external
+--!                              device, .e.g an ADC, or input pins.
+--!              Address 16 - 20:        32bit memory interface
+--!                              The idea is to write an address into 17 (LSB)
+--!                              and 18 (MSB)
+--!                              Then write the LSB16 into 19, and finally
+--!                              the  MSB16 into 20. On write to 20, the 32bit
+--!                              data in 19 and 20 is written to the memory, AND
+--!                              the address is auto-incremented, so that the NEXT
+--!                              write seuqence doesn't need to re-write the address.
+--!                              A Read on 20 reads the current address and returns
+--!                              a 32bit data word into the FIFO, then increases
+--!                              the memory. This read is repeated n times, where
+--!                              "n" is the 16bit value at address 16.
+--!              Address 25:     This address initiates a read from the DATA_FIFO
+--!                              The value written `n' indicates the number of
+--!                              words to copy from the DATA_FIFO to the FIFO.
+--!                              Write `n' will result in n+1 words to be transferred.
+--!                              Will wait indefinitely for all words to be transferred
+--!                              should FIFOs stay in empty/full state.
+--!
+--! Revisions  :
+--! Date        Version  Author          Description
+--! 2013-06-12  1.0      jschamba        Created
+--! 2013-10-21  1.1      thorsten        changed memory address space to 32 bit
+--!                                      added an interface to read a data fifo
+--! 2016-12-25           ymei            Adapt to FWFT FIFO
+--! \endverbatim
+--------------------------------------------------------------------------------
 
 LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
@@ -110,6 +106,7 @@ ARCHITECTURE a OF control_interface IS
   CONSTANT SEL_FIFO : integer := 2;
   SIGNAL sFifoD     : std_logic_vector(35 DOWNTO 0);
   SIGNAL sFifoFull  : std_logic;
+  SIGNAL sFifoWren  : std_logic;
   SIGNAL sFifoWrreq : std_logic;
   SIGNAL sFifoRst   : std_logic;
   SIGNAL sFifoClk   : std_logic;
@@ -131,7 +128,6 @@ ARCHITECTURE a OF control_interface IS
   -- signals for FIFO read
   -- to read data from a FIFO
   SIGNAL sDataFifoCount : std_logic_vector(15 DOWNTO 0);
-  SIGNAL sDataFIFOrdreq : std_logic;
 
   -- State machine variable
   TYPE cmdState_t IS (
@@ -166,7 +162,6 @@ BEGIN
 
   -- data fifo
   DATA_FIFO_RDCLK <= CLK;
-  DATA_FIFO_RDREQ <= sDataFIFOrdreq;
 
   -- data/event FIFO
   sFifoRst <= RESET;
@@ -177,7 +172,7 @@ BEGIN
       wr_clk => sFifoClk,
       rd_clk => FIFO_RDCLK,
       din    => sFifoD,
-      wr_en  => sFifoWrreq,
+      wr_en  => sFifoWren,
       rd_en  => FIFO_RDREQ,
       dout   => FIFO_Q,
       full   => sFifoFull,
@@ -188,6 +183,10 @@ BEGIN
   sFifoD(31 DOWNTO 0)  <= MEM_DOUT WHEN bMemNotReg = SEL_MEM ELSE
                           DATA_FIFO_Q WHEN bMemNotReg = SEL_FIFO ELSE
                           x"0000" & sRegOut;
+  sFifoWren            <= (NOT DATA_FIFO_EMPTY) WHEN bMemNotReg = SEL_FIFO
+                          ELSE sFifoWrreq;
+  DATA_FIFO_RDREQ      <= (NOT sFifoFull)       WHEN bMemNotReg = SEL_FIFO
+                          ELSE '0';
 
   cmdIF_inst : PROCESS (CLK, RESET) IS
     VARIABLE counterV    : integer RANGE 0 TO 65535 := 0;
@@ -212,7 +211,6 @@ BEGIN
       sFifoWrreq     <= '0';
       sWea           <= '0';
       sRegOut        <= (OTHERS => '0');
-      sDataFIFOrdreq <= '0';
 
       CASE cmdState IS
 --      //// initialize registers to some sensible values
@@ -335,13 +333,10 @@ BEGIN
                 cmdState <= MEM_ADV;
 
               WHEN 25 =>                -- Data Fifo read count
-                counterFIFO    := to_integer(unsigned(CMD_FIFO_Q(15 DOWNTO 0)));
-                bMemNotReg     <= SEL_FIFO;
-                IF DATA_FIFO_EMPTY = '0' AND counterFIFO > 0 THEN
-                  cmdState <= FIFO_ADV;
-                ELSE
-                  cmdState <= WAIT_CMD;
-                END IF;
+                counterFIFO := to_integer(unsigned(CMD_FIFO_Q(15 DOWNTO 0)));
+                bMemNotReg  <= SEL_FIFO;
+                cmdState    <= FIFO_ADV;
+
               WHEN OTHERS =>            -- bad address, do nothing
                 cmdState <= WAIT_CMD;
             END CASE;
@@ -383,22 +378,17 @@ BEGIN
         WHEN FIFO_ADV =>
           -- read data fifo, write reads to output fifo
           -- exit when enough words were transferred
-          -- DATA_FIFO_EMPTY prematurely terminates the transfer
-          IF DATA_FIFO_EMPTY = '0' THEN
-            cmdState           <= FIFO_ADV;
-            IF sFifoFull = '0' THEN
-              IF counterFIFO = 0 THEN
-                -- we are done
-                cmdState <= WAIT_CMD;
-              ELSE
-                -- more to copy
-                sFifoWrreq     <= '1';
-                sDataFIFOrdreq <= '1';
-                counterFIFO    := counterFIFO - 1;
-              END IF;
+          bMemNotReg <= SEL_FIFO;
+          cmdState   <= FIFO_ADV;
+          IF (DATA_FIFO_EMPTY = '0') AND (sFifoFull = '0') THEN
+            IF counterFIFO = 0 THEN
+              -- we are done.
+              bMemNotReg <= SEL_REG;
+              cmdState   <= WAIT_CMD;
+            ELSE
+              -- reduce the counter.
+              counterFIFO := counterFIFO - 1;
             END IF;
-          ELSE
-            cmdState <= WAIT_CMD;
           END IF;
 
 --      //// shouldn't happen

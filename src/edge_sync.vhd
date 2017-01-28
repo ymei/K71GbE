@@ -1,22 +1,13 @@
-----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
--- 
--- Create Date:    19:32:46 01/25/2015
--- Design Name: 
--- Module Name:    edge_sync - Behavioral 
--- Project Name: 
--- Target Devices: 
--- Tool versions: 
--- Description:    Capture an edge
---
--- Dependencies: 
---
--- Revision: 
--- Revision 0.01 - File Created
--- Additional Comments: 
---
-----------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+--! @file edge_sync.vhd
+--! @brief capture the edge of a signal.
+--! @author Yuan Mei
+--!
+--! Input signal EI can be in the CLK domain or from another clock domain.
+--! If from another clock domain, it has to be high (rising edge) or
+--! low (falling edge) longer than 1 CLK cycle.
+--! The output SO is synchronized to CLK and is exactly 1 CLK cycle wide.
+--------------------------------------------------------------------------------
 LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
 
@@ -29,15 +20,19 @@ USE ieee.numeric_std.ALL;
 LIBRARY UNISIM;
 USE UNISIM.VComponents.ALL;
 
+--! A module that captures the edge of a signal EI.
+--! If EI is from another clock domain, it has to be high (rising edge) OR
+--! low (falling edge) longer than 1 CLK cycle.
+--! The output SO is synchronized to CLK and is exactly 1 CLK cycle wide.
 ENTITY edge_sync IS
   GENERIC (
-    EDGE : std_logic := '1'  -- '1'  :  rising edge,  '0' falling edge
+    EDGE : std_logic := '1'  --! '1'  :  rising edge,  '0' falling edge
   );
   PORT (
-    RESET : IN  std_logic;
-    CLK   : IN  std_logic;
-    EI    : IN  std_logic;
-    SO    : OUT std_logic
+    RESET : IN  std_logic;              --! reset
+    CLK   : IN  std_logic;              --! clock
+    EI    : IN  std_logic;              --! input signal.
+    SO    : OUT std_logic               --! output pulse, 1 CLK cycle wide.
   );
 END edge_sync;
 

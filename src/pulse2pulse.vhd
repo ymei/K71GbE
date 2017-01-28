@@ -1,17 +1,30 @@
+--------------------------------------------------------------------------------
+--! @file pulse2pulse.vhd
+--! @brief Drive a pulse from one clock domain to another.
+--!
+--! Regardless of the duration of pulsein, the pulseout will be one out_clk
+--! cycle wide and synchronized to out_clk.  pulsein has to be synchronized to
+--! in_clk already.
+--------------------------------------------------------------------------------
+
 library ieee;
 use ieee.std_logic_1164.all ;
 use ieee.std_logic_arith.all ;
 use ieee.std_logic_unsigned.all ;
 use ieee.std_logic_misc.all ;
 
+--! A module that drive a pulse from one clock domain to another.
+--! Regardless of the duration of pulsein, the pulseout will be one out_clk
+--! cycle wide and synchronized to out_clk.  pulsein has to be synchronized to
+--! in_clk already.
 entity pulse2pulse is
 port (
-   in_clk      :in std_logic;
-   out_clk     :in std_logic;
-   rst         :in std_logic;
-   pulsein     :in std_logic;
-   inbusy      :out std_logic;
-   pulseout    :out std_logic
+   in_clk      :in std_logic;           --! input clock
+   out_clk     :in std_logic;           --! output clock
+   rst         :in std_logic;           --! reset
+   pulsein     :in std_logic;           --! input pulse which is synchronized to in_clk
+   inbusy      :out std_logic;          --! notify input side that output is not ready yet
+   pulseout    :out std_logic           --! one out_clk wide output pulse, synchronized to out_clk
    );
 end pulse2pulse;
 
@@ -91,7 +104,7 @@ begin
       outreset      <= '0';
       pulseout      <= '0';
    elsif(out_clk'event and out_clk = '1') then
-      --generate a pulse on the outpput when the
+      --generate a pulse on the output when the
       --set signal has travelled through the synchronising fip flops
       if (out_set_prev = '1' and out_set_prev2 = '0') then
          pulseout <= '1';

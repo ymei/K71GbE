@@ -194,7 +194,7 @@ architecture wrapper of gig_eth is
 
   COMPONENT COM5402 IS
     GENERIC (
-      CLK_FREQUENCY   : integer               := 56;
+      CLK_FREQUENCY   : integer               := 125;
       -- CLK frequency in MHz. Needed to compute actual delays.
       TX_IDLE_TIMEOUT : integer RANGE 0 TO 50 := 50;
       -- inactive input timeout, expressed in 4us units. -- 50*4us = 200us 
