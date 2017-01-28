@@ -750,8 +750,8 @@ int fmc112_read_save(int sockfd)
     n = cmd_send_pulse(&buf32, 0x20); /* pulse_reg(5) */
     n = query_response(sockfd, buf, n, buf, 0); Sleep(2);
 
-    /* read data fifo back */
-    ncmd = cmd_read_datafifo(&buf32, NBASK/sizeof(int32_t));
+    /* read data fifo back, return will be n(written) + 1 words */
+    ncmd = cmd_read_datafifo(&buf32, NBASK/sizeof(int32_t)-1);
 
     iP = 0;
     nb = 0;
