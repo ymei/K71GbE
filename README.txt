@@ -35,7 +35,7 @@ Mode switch: M2 M1 M0
 
 In Vivado, use the Tcl command:
 write_cfgmem -format MCS -size 128 -interface BPIx16 -loadbit "up 0x0 top/top.runs/impl_1/top.bit" target/FMC112IPv4Sel.mcs
-Then in Hardware Manager, choose Micron density 1024Mb 28f128p30t-bpi-x16
+Then in Hardware Manager, choose Micron density 1024Mb 28f00ap30t-bpi-x16
 Pull-none, RS Pins 25:24
 -------------------------------------------------------------------------------
 gig_eth:
