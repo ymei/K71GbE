@@ -6,7 +6,7 @@ KC705 1-gigabit ethernet (TCP) data acquisition with FMC112 module
 Generate the project after git clone:
 Make sure there are following lines in config/project.tcl:
     # Create project
-    create_project top ./
+    create_project top ./ # possibly with -part xc7k325tffg900-2
 then 
     mkdir top; cd top/
     vivado -mode tcl -source ../config/project.tcl
@@ -21,6 +21,8 @@ then
     launch_runs -jobs 8 impl_1 -to_step write_bitstream
     wait_on_run impl_1
     exit
+#
+project.tcl is generated via File->Write Project Tcl with everything unchecked.
 -------------------------------------------------------------------------------
 Generating a PROM file (MCS):
 In iMPACT, select BPI Flash Configure Single FPGA

@@ -48,7 +48,7 @@
 -- THIS COPYRIGHT NOTICE AND DISCLAIMER MUST BE RETAINED AS
 -- PART OF THIS FILE AT ALL TIMES. 
 -- -----------------------------------------------------------------------------
--- Description:  This is the Verilog example design for the Tri-Mode
+-- Description:  This is the VHDL example design for the Tri-Mode
 --               Ethernet MAC core. It is intended that this example design
 --               can be quickly adapted and downloaded onto an FPGA to provide
 --               a real hardware test environment.

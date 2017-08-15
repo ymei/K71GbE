@@ -1038,9 +1038,10 @@ BEGIN
       DBG_APP_RD_DATA       => sdram_app_rd_data,
       DBG_APP_RD_DATA_VALID => sdram_app_rd_data_valid
     );
+  idata_adc_data_clk    <= clk_125MHz;
   idata_data_fifo_reset <= pulse_reg(2);
-  status_reg(64*2+28)    <= idata_data_wr_busy;
-  status_reg(64*2+29)    <= idata_data_wr_wrapped;
+  status_reg(64*2+28)   <= idata_data_wr_busy;
+  status_reg(64*2+29)   <= idata_data_wr_wrapped;
   --
   channel_sel_inst : channel_sel
     PORT MAP (
