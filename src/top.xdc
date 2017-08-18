@@ -145,17 +145,6 @@ set_property SLEW SLOW [get_ports {BTN5Bit[4]}]
 set_property IOSTANDARD LVCMOS15 [get_ports {BTN5Bit[4]}]
 set_property LOC AC6 [get_ports {BTN5Bit[4]}]
 
-# SMA
-set_property PACKAGE_PIN L25 [get_ports {USER_SMA_CLOCK_P}]
-set_property IOSTANDARD LVCMOS25 [get_ports USER_SMA_CLOCK_P]
-set_property PACKAGE_PIN K25 [get_ports {USER_SMA_CLOCK_N}]
-set_property IOSTANDARD LVCMOS25 [get_ports USER_SMA_CLOCK_N]
-
-set_property PACKAGE_PIN Y23 [get_ports USER_SMA_GPIO_P]
-set_property IOSTANDARD LVCMOS25 [get_ports USER_SMA_GPIO_P]
-set_property PACKAGE_PIN Y24 [get_ports USER_SMA_GPIO_N]
-set_property IOSTANDARD LVCMOS25 [get_ports USER_SMA_GPIO_N]
-
 #>-- LEDs, buttons and switches -->
 
 #<-- UART --<
@@ -275,10 +264,28 @@ set_false_path -to [get_pins -of_objects [get_cells -hierarchical -filter {NAME 
 
 #>-- gigabit eth interface -->
 
+# I2C
 set_property PACKAGE_PIN K21     [get_ports I2C_SCL]
 set_property IOSTANDARD LVCMOS25 [get_ports I2C_SCL]
 set_property PACKAGE_PIN L21     [get_ports I2C_SDA]
 set_property IOSTANDARD LVCMOS25 [get_ports I2C_SDA]
+
+# External clock IC
+set_property PACKAGE_PIN AE20 [get_ports SI5324_RSTn]
+set_property IOSTANDARD LVCMOS25 [get_ports SI5324_RSTn]
+set_property PACKAGE_PIN L8 [get_ports SI5324CLK_P]
+set_property PACKAGE_PIN L7 [get_ports SI5324CLK_N]
+
+# SMA
+set_property PACKAGE_PIN L25 [get_ports {USER_SMA_CLOCK_P}]
+set_property IOSTANDARD LVCMOS25 [get_ports USER_SMA_CLOCK_P]
+set_property PACKAGE_PIN K25 [get_ports {USER_SMA_CLOCK_N}]
+set_property IOSTANDARD LVCMOS25 [get_ports USER_SMA_CLOCK_N]
+
+set_property PACKAGE_PIN Y23 [get_ports USER_SMA_GPIO_P]
+set_property IOSTANDARD LVCMOS25 [get_ports USER_SMA_GPIO_P]
+set_property PACKAGE_PIN Y24 [get_ports USER_SMA_GPIO_N]
+set_property IOSTANDARD LVCMOS25 [get_ports USER_SMA_GPIO_N]
 
 # Local Variables:
 # mode: tcl

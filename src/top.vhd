@@ -35,6 +35,8 @@ ENTITY top IS
     USER_CLK_N       : IN    std_logic;
     SGMIICLK_Q0_P    : IN    std_logic;  --! 125 MHz, for GTP/GTH/GTX
     SGMIICLK_Q0_N    : IN    std_logic;
+    SI5324CLK_P      : IN    std_logic;
+    SI5324CLK_N      : IN    std_logic;
     --
     LED8Bit          : OUT   std_logic_vector(7 DOWNTO 0);
     DIPSw4Bit        : IN    std_logic_vector(3 DOWNTO 0);
@@ -43,6 +45,7 @@ ENTITY top IS
     USER_SMA_CLOCK_N : OUT   std_logic;
     USER_SMA_GPIO_P  : OUT   std_logic;
     USER_SMA_GPIO_N  : OUT   std_logic;
+    SI5324_RSTn      : OUT   std_logic;
     -- UART via usb
     USB_RX           : OUT   std_logic;
     USB_TX           : IN    std_logic;
@@ -363,6 +366,34 @@ ARCHITECTURE Behavioral OF top IS
     );
   END COMPONENT;
   ---------------------------------------------> SDRAM
+  ---------------------------------------------< I2C
+  COMPONENT i2c_master
+    GENERIC (
+      INPUT_CLK_FREQENCY : integer := 100_000_000;
+      -- BUS CLK freqency should be divided by multiples of 4 from input frequency
+      BUS_CLK_FREQUENCY  : integer := 100_000
+    );
+    PORT (
+      CLK       : IN  std_logic;        -- system clock 50Mhz
+      RESET     : IN  std_logic;        -- active high reset
+      START     : IN  std_logic;  -- rising edge triggers r/w; synchronous to CLK
+      MODE      : IN  std_logic_vector(1 DOWNTO 0);  -- "00" : 1 bytes read or write, "01" : 2 bytes r/w, "10" : 3 bytes write only;
+      SL_RW     : IN  std_logic;        -- '0' is write, '1' is read
+      SL_ADDR   : IN  std_logic_vector(6 DOWNTO 0);  -- slave addr
+      REG_ADDR  : IN  std_logic_vector(7 DOWNTO 0);  -- slave internal reg addr for read and write
+      WR_DATA0  : IN  std_logic_vector(7 DOWNTO 0);  -- first data byte to write
+      WR_DATA1  : IN  std_logic_vector(7 DOWNTO 0);  -- second data byte to write
+      RD_DATA0  : OUT std_logic_vector(7 DOWNTO 0);  -- first data byte read
+      RD_DATA1  : OUT std_logic_vector(7 DOWNTO 0);  -- second data byte read
+      BUSY      : OUT std_logic;        -- indicates transaction in progress
+      ACK_ERROR : OUT std_logic;        -- i2c has unexpected ack
+      SDA_in    : IN  std_logic;        -- serial data input from i2c bus
+      SDA_out   : OUT std_logic;        -- serial data output to i2c bus
+      SDA_T     : OUT std_logic;  -- serial data direction to/from i2c bus, '1' is read-in
+      SCL       : OUT std_logic         -- serial clock output to i2c bus
+    );
+  END COMPONENT;
+  ---------------------------------------------> I2C
   ---------------------------------------------< debug : ILA and VIO (`Chipscope')
   COMPONENT dbg_ila
     PORT (
@@ -408,6 +439,8 @@ ARCHITECTURE Behavioral OF top IS
   SIGNAL clk156                            : std_logic;
   SIGNAL clk_sgmii_i                       : std_logic;
   SIGNAL clk_sgmii                         : std_logic;
+  SIGNAL clk_si5324_i                      : std_logic;
+  SIGNAL clk_si5324                        : std_logic;
   ---------------------------------------------< UART/RS232
   SIGNAL uart_rx_data                      : std_logic_vector(7 DOWNTO 0);
   SIGNAL uart_rx_rdy                       : std_logic;
@@ -547,6 +580,12 @@ ARCHITECTURE Behavioral OF top IS
   SIGNAL idata_data_wr_busy                : std_logic;
   SIGNAL idata_data_wr_wrapped             : std_logic;
   ---------------------------------------------> IDATA
+  ---------------------------------------------< I2C
+  SIGNAL i2c_sda_out                       : std_logic;
+  SIGNAL i2c_sda_in                        : std_logic;
+  SIGNAL i2c_sda_t                         : std_logic;
+  SIGNAL i2c_scl_out                       : std_logic;
+  ---------------------------------------------> I2C
   ---------------------------------------------< debug
   SIGNAL dbg_ila_probe0                           : std_logic_vector (63 DOWNTO 0);
   SIGNAL dbg_ila_probe1                           : std_logic_vector (79 DOWNTO 0);
@@ -1086,6 +1125,80 @@ BEGIN
   dbg_ila_probe3(33)                        <= sdram_app_rd_data_valid;
   dbg_ila_probe3(511 DOWNTO 336)            <= status_reg;
   ---------------------------------------------> SDRAM
+  ---------------------------------------------< I2C
+  i2c_master_inst : i2c_master
+    GENERIC MAP (
+      INPUT_CLK_FREQENCY => 100_000_000,
+      BUS_CLK_FREQUENCY  => 100_000
+    )
+    PORT MAP (
+      CLK       => control_clk,
+      RESET     => reset,
+      START     => pulse_reg(15),
+      MODE      => config_reg(16*29+1 DOWNTO 16*29),
+      SL_RW     => config_reg(16*30+15),
+      SL_ADDR   => config_reg(16*30+14 DOWNTO 16*30+8),
+      REG_ADDR  => config_reg(16*30+7 DOWNTO 16*30),
+      WR_DATA0  => config_reg(16*31+15 DOWNTO 16*31+8),
+      WR_DATA1  => config_reg(16*31+7 DOWNTO 16*31),
+      RD_DATA0  => status_reg(16*10+15 DOWNTO 16*10+8),
+      RD_DATA1  => OPEN,
+      BUSY      => status_reg(16*10+7),
+      ACK_ERROR => status_reg(16*10+6),
+      SDA_in    => i2c_sda_in,
+      SDA_out   => i2c_sda_out,
+      SDA_T     => i2c_sda_t,
+      SCL       => i2c_scl_out
+    );
+  i2c_sda_iobuf_inst : IOBUF
+    GENERIC MAP(
+      DRIVE      => 12,
+      SLEW       => "SLOW"
+    )
+    PORT MAP(
+      O  => i2c_sda_in,
+      IO => I2C_SDA,
+      I  => i2c_sda_out,
+      T  => i2c_sda_t
+    );
+  i2c_scl_iobuf_inst : IOBUF
+    GENERIC MAP(
+      DRIVE      => 12,
+      SLEW       => "SLOW"
+    )
+    PORT MAP(
+      O  => OPEN,
+      IO => I2C_SCL,
+      I  => i2c_scl_out,
+      T  => '0'
+    );
+  -- External clock IC
+  SI5324_RSTn <= NOT (reset OR pulse_reg(14));
+  si5324clk_ibufds_inst : IBUFDS_GTE2
+    PORT MAP (
+      O     => clk_si5324_i,
+      ODIV2 => OPEN,
+      CEB   => '0',
+      I     => SI5324CLK_P,
+      IB    => SI5324CLK_N
+    );
+  si5324clk_bufg_inst : BUFG
+    PORT MAP (
+      I => clk_si5324_i,
+      O => clk_si5324
+    );
+  -- -- debug
+  dbg_ila1_inst : dbg_ila1
+    PORT MAP (
+      CLK    => idata_adc_refout_clkdiv,
+      PROBE0 => dbg_ila1_probe0,
+      PROBE1 => dbg_ila1_probe1
+    );
+  dbg_ila1_probe0 <= (0 => pulse_reg(15), 1 => i2c_scl_out,
+                      2 => i2c_sda_t, 3 => i2c_sda_in, 4 => i2c_sda_out, 5 => status_reg(16*10+6),
+                      6 => clk_si5324,
+                      OTHERS => '0');
+  ---------------------------------------------> I2C
 
   -- clock output
   refout_clk_div_inst : clk_div
@@ -1095,10 +1208,10 @@ BEGIN
       DIV     => config_reg(16*15+3 DOWNTO 16*15),
       CLK_DIV => idata_adc_refout_clkdiv
     );
-  clk_fwd_inst : clk_fwd
-    PORT MAP (R => reset, I => idata_adc_refout_clkdiv, O => USER_SMA_CLOCK_P);
+  clk_fwd_inst : clk_fwd                -- idata_adc_refout_clkdiv
+    PORT MAP (R => reset, I => clk_si5324, O => USER_SMA_CLOCK_P);
   clk_fwd_inst1 : clk_fwd GENERIC MAP (INV => true)
-    PORT MAP (R => reset, I => idata_adc_refout_clkdiv, O => USER_SMA_CLOCK_N);
+    PORT MAP (R => reset, I => clk_si5324, O => USER_SMA_CLOCK_N);
   clk_fwd_inst2 : clk_fwd GENERIC MAP (INV => true)
     PORT MAP (R => reset, I => idata_adc_data_clk, O => USER_SMA_GPIO_N);
 
