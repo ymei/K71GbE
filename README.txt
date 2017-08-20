@@ -40,6 +40,21 @@ write_cfgmem -format MCS -size 128 -interface BPIx16 -loadbit "up 0x0 top/top.ru
 Then in Hardware Manager, choose Micron density 1024Mb 28f00ap30t-bpi-x16
 Pull-none, RS Pins 25:24
 -------------------------------------------------------------------------------
+http://xc3sprog.sourceforge.net/ an open source jtag programmer
+Need libftdi1
+May need to add
+include_directories("/opt/local/include")
+link_directories("/opt/local/lib")
+to CMakeLists.txt for compilation
+# show jtag chain
+xc3sprog -c jtaghs1 -v
+# download bitfile
+xc3sprog -c jtaghs1 -v -p 0 top.bit
+# on macosx,
+kextstat | grep -i ftdi
+sudo kextunload -bundle-id com.FTDI.driver.FTDIUSBSerialDriver
+sudo kextunload -bundle-id com.apple.driver.AppleUSBFTDI
+-------------------------------------------------------------------------------
 gig_eth:
 
 rgmii IDELAY_VALUE (.xdc) affects the 1gig ethernet reliability

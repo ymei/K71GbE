@@ -367,29 +367,26 @@ ARCHITECTURE Behavioral OF top IS
   END COMPONENT;
   ---------------------------------------------> SDRAM
   ---------------------------------------------< I2C
-  COMPONENT i2c_master
+  COMPONENT i2c_write_regmap
     GENERIC (
-      INPUT_CLK_FREQENCY : integer := 100_000_000;
+      REGMAP_FNAME        : string;
+      INPUT_CLK_FREQENCY  : integer := 100_000_000;
       -- BUS CLK freqency should be divided by multiples of 4 from input frequency
-      BUS_CLK_FREQUENCY  : integer := 100_000
+      BUS_CLK_FREQUENCY   : integer := 100_000;
+      START_DELAY_CYCLE   : integer := 100_000_000; -- ext_rst to happen # of clk cycles after START
+      EXT_RST_WIDTH_CYCLE : integer := 1000;     -- pulse width of ext_rst in clk cycles
+      EXT_RST_DELAY_CYCLE : integer := 100_000   -- 1st reg write to happen clk cycles after ext_rst
     );
     PORT (
       CLK       : IN  std_logic;        -- system clock 50Mhz
       RESET     : IN  std_logic;        -- active high reset
       START     : IN  std_logic;  -- rising edge triggers r/w; synchronous to CLK
-      MODE      : IN  std_logic_vector(1 DOWNTO 0);  -- "00" : 1 bytes read or write, "01" : 2 bytes r/w, "10" : 3 bytes write only;
-      SL_RW     : IN  std_logic;        -- '0' is write, '1' is read
-      SL_ADDR   : IN  std_logic_vector(6 DOWNTO 0);  -- slave addr
-      REG_ADDR  : IN  std_logic_vector(7 DOWNTO 0);  -- slave internal reg addr for read and write
-      WR_DATA0  : IN  std_logic_vector(7 DOWNTO 0);  -- first data byte to write
-      WR_DATA1  : IN  std_logic_vector(7 DOWNTO 0);  -- second data byte to write
-      RD_DATA0  : OUT std_logic_vector(7 DOWNTO 0);  -- first data byte read
-      RD_DATA1  : OUT std_logic_vector(7 DOWNTO 0);  -- second data byte read
+      EXT_RSTn  : OUT std_logic;        -- active low for resetting the slave
       BUSY      : OUT std_logic;        -- indicates transaction in progress
       ACK_ERROR : OUT std_logic;        -- i2c has unexpected ack
       SDA_in    : IN  std_logic;        -- serial data input from i2c bus
       SDA_out   : OUT std_logic;        -- serial data output to i2c bus
-      SDA_T     : OUT std_logic;  -- serial data direction to/from i2c bus, '1' is read-in
+      SDA_t     : OUT std_logic;  -- serial data direction to/from i2c bus, '1' is read-in
       SCL       : OUT std_logic         -- serial clock output to i2c bus
     );
   END COMPONENT;
@@ -1126,8 +1123,10 @@ BEGIN
   dbg_ila_probe3(511 DOWNTO 336)            <= status_reg;
   ---------------------------------------------> SDRAM
   ---------------------------------------------< I2C
-  i2c_master_inst : i2c_master
+  i2c_write_regmap_inst : i2c_write_regmap
     GENERIC MAP (
+      -- file not used, see actual code.
+      REGMAP_FNAME       => "../../../config/Si5324_125MHz_regmap.txt",
       INPUT_CLK_FREQENCY => 100_000_000,
       BUS_CLK_FREQUENCY  => 100_000
     )
@@ -1135,19 +1134,12 @@ BEGIN
       CLK       => control_clk,
       RESET     => reset,
       START     => pulse_reg(15),
-      MODE      => config_reg(16*29+1 DOWNTO 16*29),
-      SL_RW     => config_reg(16*30+15),
-      SL_ADDR   => config_reg(16*30+14 DOWNTO 16*30+8),
-      REG_ADDR  => config_reg(16*30+7 DOWNTO 16*30),
-      WR_DATA0  => config_reg(16*31+15 DOWNTO 16*31+8),
-      WR_DATA1  => config_reg(16*31+7 DOWNTO 16*31),
-      RD_DATA0  => status_reg(16*10+15 DOWNTO 16*10+8),
-      RD_DATA1  => OPEN,
+      EXT_RSTn  => SI5324_RSTn,
       BUSY      => status_reg(16*10+7),
       ACK_ERROR => status_reg(16*10+6),
       SDA_in    => i2c_sda_in,
       SDA_out   => i2c_sda_out,
-      SDA_T     => i2c_sda_t,
+      SDA_t     => i2c_sda_t,
       SCL       => i2c_scl_out
     );
   i2c_sda_iobuf_inst : IOBUF
@@ -1173,7 +1165,6 @@ BEGIN
       T  => '0'
     );
   -- External clock IC
-  SI5324_RSTn <= NOT (reset OR pulse_reg(14));
   si5324clk_ibufds_inst : IBUFDS_GTE2
     PORT MAP (
       O     => clk_si5324_i,
@@ -1186,6 +1177,17 @@ BEGIN
     PORT MAP (
       I => clk_si5324_i,
       O => clk_si5324
+    );
+  si5324_clk_div_inst : clk_div
+    GENERIC MAP (
+      WIDTH => 32,
+      PBITS => 8
+    )
+    PORT MAP (
+      RESET   => reset,
+      CLK     => clk_si5324,
+      DIV     => x"1b",
+      CLK_DIV => LED8Bit(0)
     );
   -- -- debug
   dbg_ila1_inst : dbg_ila1

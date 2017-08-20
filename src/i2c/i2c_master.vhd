@@ -3,7 +3,7 @@
 --! @brief As master, read/write up to 2/3 bytes on th i2c bus.
 --! @author Dong Wang, 20161009
 --!         Yuan Mei, 20170817
---! Read/write is initiated by a pluse on START
+--! Read/write is initiated by a pulse on START
 --------------------------------------------------------------------------------
 LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
@@ -31,7 +31,7 @@ ENTITY i2c_master IS
     ACK_ERROR : OUT std_logic;          -- i2c has unexpected ack
     SDA_in    : IN  std_logic;          -- serial data input from i2c bus
     SDA_out   : OUT std_logic;          -- serial data output to i2c bus
-    SDA_T     : OUT std_logic;  -- serial data direction to/from i2c bus, '1' is read-in
+    SDA_t     : OUT std_logic;  -- serial data direction to/from i2c bus, '1' is read-in
     SCL       : OUT std_logic           -- serial clock output to i2c bus
   );
 END i2c_master;
@@ -54,7 +54,7 @@ ARCHITECTURE arch OF i2c_master IS
       ACK_ERROR : OUT std_logic;
       SDA_in    : IN  std_logic;
       SDA_out   : OUT std_logic;
-      SDA_T     : OUT std_logic;
+      SDA_t     : OUT std_logic;
       SCL       : OUT std_logic
     );
   END COMPONENT i2c_master_core;
@@ -96,7 +96,7 @@ BEGIN
       ACK_ERROR => ACK_ERROR,
       SDA_in    => SDA_in,
       SDA_out   => SDA_out,
-      SDA_T     => SDA_T,
+      SDA_t     => SDA_t,
       SCL       => SCL
     );
 

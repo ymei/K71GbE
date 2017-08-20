@@ -41,7 +41,7 @@ ENTITY i2c_master_core IS
     ACK_ERROR : OUT std_logic;	-- flag if improper acknowledge from slave
     SDA_in    : IN  std_logic;		-- serial data input of i2c bus
     SDA_out   : OUT std_logic;		-- serial data output of i2c bus
-    SDA_T     : OUT std_logic;		-- serial data direction of i2c bus
+    SDA_t     : OUT std_logic;		-- serial data direction of i2c bus
     SCL	      : OUT std_logic		-- serial clock output of i2c bus
   );
 END i2c_master_core;
@@ -117,14 +117,14 @@ BEGIN
       BUSY    <= '1';			-- indicate not available
       scl_ena <= '0';			-- sets SCL high
       sda_int <= '1';			-- sets sda high
-      SDA_T   <= '1';			-- sets SDA bus as input
+      SDA_t   <= '1';			-- sets SDA bus as input
       bit_cnt <= 7;			-- restarts data bit counter
       DATA_RD <= "00000000";		-- clear data read port
     ELSIF rising_edge(data_clk) THEN
       CASE state IS
 
 	WHEN StReady =>			-- idle state
-	  SDA_T	  <= '0';		-- output
+	  SDA_t	  <= '0';		-- output
 	  sda_int <= '1';		-- pull SDA high
 	  IF(ENA = '1') THEN		-- transaction requested
 	    BUSY    <= '1';		-- flag busy
@@ -144,7 +144,7 @@ BEGIN
 
 	WHEN StCommand =>	    -- address and command byte of transaction
 	  IF(bit_cnt = 0) THEN		-- command transmit finished
-	    SDA_T   <= '1';		-- release sda for slave acknowledge
+	    SDA_t   <= '1';		-- release sda for slave acknowledge
 	    sda_int <= '1';		-- internal SDA high
 	    bit_cnt <= 7;		-- reset bit counter for "byte" states
 	    state   <= StSlv_ack1;	-- go to slave acknowledge (command)
@@ -156,18 +156,18 @@ BEGIN
 
 	WHEN StSlv_ack1 =>		  -- slave acknowledge bit (command)
 	  IF(addr_rw(0) = '0') THEN	  -- write command
-	    SDA_T   <= '0';		  -- output
+	    SDA_t   <= '0';		  -- output
 	    sda_int <= data_tx(bit_cnt);  -- write first bit of data
 	    state   <= StWr;		  -- go to write byte
 	  ELSE				  -- read command
-	    SDA_T <= '1';		  -- release SDA for incoming data
+	    SDA_t <= '1';		  -- release SDA for incoming data
 	    state <= StRd;		  -- go to read byte
 	  END IF;
 
 	WHEN StWr =>			-- write byte of transaction
 	  BUSY <= '1';			-- resume busy if continuous mode
 	  IF(bit_cnt = 0) THEN		-- write byte transmit finished
-	    SDA_T   <= '1';		-- release sda for slave acknowledge
+	    SDA_t   <= '1';		-- release sda for slave acknowledge
 	    sda_int <= '1';		-- internal SDA high
 	    bit_cnt <= 7;		-- reset bit counter for "byte" states
 	    state   <= StSlv_ack2;	-- go to slave acknowledge (write)
@@ -180,7 +180,7 @@ BEGIN
 	WHEN StRd =>			-- read byte of transaction
 	  BUSY <= '1';			-- resume busy if continuous mode
 	  IF(bit_cnt = 0) THEN		-- read byte receive finished
-	    SDA_T <= '0';		-- output
+	    SDA_t <= '0';		-- output
 	    IF(ENA = '1' AND RW = '1') THEN  -- continuing with another read
 	      sda_int <= '0';  -- acknowledge the byte has been received
 	    ELSE			-- stopping or continuing with a write
@@ -195,7 +195,7 @@ BEGIN
 	  END IF;
 
 	WHEN StSlv_ack2 =>		-- slave acknowledge bit (write)
-	  SDA_T <= '0';			-- output
+	  SDA_t <= '0';			-- output
 	  IF(ENA = '1') THEN		-- continue transaction
 	    BUSY    <= '0';		-- continue is accepted
 	    addr_rw <= ADDR & RW;  -- collect requested slave address and command
@@ -220,7 +220,7 @@ BEGIN
 	    IF(RW = '0') THEN		-- continue transaction with a write
 	      state <= StStart;		-- repeated start
 	    ELSE	     -- continue transaction with another read
-	      SDA_T   <= '1';		-- input
+	      SDA_t   <= '1';		-- input
 	      sda_int <= '1';		-- release sda from incoming data
 	      scl_ena <= '0';  -- disable SCL for one period for extra reads
 	      state   <= StRdWait;	-- goto wait state
