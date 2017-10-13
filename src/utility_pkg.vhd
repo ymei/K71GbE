@@ -105,17 +105,6 @@ PACKAGE utility IS
       SO    : OUT std_logic
     );
   END COMPONENT;
-  COMPONENT pulsegen
-    GENERIC (
-      COUNTER_WIDTH : positive := 16
-    );
-    PORT (
-      CLK    : IN  std_logic;
-      PERIOD : IN  std_logic_vector(COUNTER_WIDTH-1 DOWNTO 0);
-      I      : IN  std_logic;
-      O      : OUT std_logic
-    );
-  END COMPONENT;
   COMPONENT clk_div IS
     GENERIC (
       WIDTH : positive := 16;

@@ -9,17 +9,17 @@ create_clock -name user_clock   -period 6.4 [get_ports {USER_CLK_P}]
 # 125MHz
 create_clock -name sgmii_clock  -period 8.0 [get_ports {SGMIICLK_Q0_P}]
 
-# PadFunction: IO_L12P_T1_MRCC_33 
+# PadFunction: IO_L12P_T1_MRCC_33
 set_property VCCAUX_IO DONTCARE [get_ports {SYS_CLK_P}]
 set_property IOSTANDARD DIFF_SSTL15 [get_ports {SYS_CLK_P}]
 set_property PACKAGE_PIN AD12 [get_ports {SYS_CLK_P}]
 
-# PadFunction: IO_L12N_T1_MRCC_33 
+# PadFunction: IO_L12N_T1_MRCC_33
 set_property VCCAUX_IO DONTCARE [get_ports {SYS_CLK_N}]
 set_property IOSTANDARD DIFF_SSTL15 [get_ports {SYS_CLK_N}]
 set_property PACKAGE_PIN AD11 [get_ports {SYS_CLK_N}]
 
-# Set DCI_CASCADE          
+# Set DCI_CASCADE
 set_property slave_banks {32 34} [get_iobanks 33]
 
 # 156.25MHz clock, IOSTANDARD is overridden in IBUFDS
@@ -32,7 +32,8 @@ set_property PACKAGE_PIN K29 [get_ports {USER_CLK_N}]
 set_property PACKAGE_PIN G8 [get_ports {SGMIICLK_Q0_P}]
 set_property PACKAGE_PIN G7 [get_ports {SGMIICLK_Q0_N}]
 
-# clock domain interaction
+# clock domain interaction, must explictly specify all possible pairs.
+# Command with only one `-group' parameter means the clock is asynchronous to all other, including generated from its own, clocks.
 set_clock_groups -asynchronous -group [get_clocks -include_generated_clocks system_clock] -group [get_clocks -include_generated_clocks sgmii_clock]
 set_clock_groups -asynchronous -group [get_clocks -include_generated_clocks system_clock] -group [get_clocks -include_generated_clocks user_clock]
 set_clock_groups -asynchronous -group [get_clocks -include_generated_clocks user_clock] -group [get_clocks -include_generated_clocks sgmii_clock]

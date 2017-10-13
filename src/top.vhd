@@ -426,7 +426,7 @@ ARCHITECTURE Behavioral OF top IS
   ---------------------------------------------> debug : ILA and VIO (`Chipscope')
 
   -- Signals
-  SIGNAL reset                             : std_logic;  
+  SIGNAL reset                             : std_logic;
   SIGNAL sys_clk                           : std_logic;
   SIGNAL clk_50MHz                         : std_logic;
   SIGNAL clk_100MHz                        : std_logic;
@@ -449,7 +449,7 @@ ARCHITECTURE Behavioral OF top IS
   SIGNAL cmd_fifo_q                        : std_logic_vector(35 DOWNTO 0);
   SIGNAL cmd_fifo_empty                    : std_logic;
   SIGNAL cmd_fifo_rdreq                    : std_logic;
-  -- thirtytwo 16bit registers  
+  -- thirtytwo 16bit registers
   SIGNAL config_reg                        : std_logic_vector(511 DOWNTO 0);
   -- 16bit pulse register
   SIGNAL pulse_reg                         : std_logic_vector(15 DOWNTO 0);
@@ -459,7 +459,7 @@ ARCHITECTURE Behavioral OF top IS
   SIGNAL control_mem_addr                  : std_logic_vector(31 DOWNTO 0);
   SIGNAL control_mem_din                   : std_logic_vector(31 DOWNTO 0);
   ---------------------------------------------> UART/RS232
-  ---------------------------------------------< ten_gig_eth 
+  ---------------------------------------------< ten_gig_eth
   SIGNAL sfp_tx_disable_i                  : std_logic;
   SIGNAL sPcs_pma_core_status              : std_logic_vector(7 DOWNTO 0);
   SIGNAL sEmac_status_vector               : std_logic_vector(1 DOWNTO 0);
@@ -510,7 +510,7 @@ ARCHITECTURE Behavioral OF top IS
   SIGNAL gig_eth_gateway_ip_addr           : std_logic_vector(31 DOWNTO 0);
   SIGNAL gig_eth_tx_tdata                  : std_logic_vector(7 DOWNTO 0);
   SIGNAL gig_eth_tx_tvalid                 : std_logic;
-  SIGNAL gig_eth_tx_tready                 : std_logic;  
+  SIGNAL gig_eth_tx_tready                 : std_logic;
   SIGNAL gig_eth_rx_tdata                  : std_logic_vector(7 DOWNTO 0);
   SIGNAL gig_eth_rx_tvalid                 : std_logic;
   SIGNAL gig_eth_rx_tready                 : std_logic;
@@ -899,16 +899,6 @@ BEGIN
         CMD_FIFO_RDCLK       => clk_200MHz
       );
 
-    --pulsegen_inst : pulsegen
-    --  GENERIC MAP (
-    --    COUNTER_WIDTH => 16
-    --  )
-    --  PORT MAP (
-    --    CLK    => sTx_axis_fifo_aclk,
-    --    PERIOD => config_reg(31 DOWNTO 16),
-    --    I      => pulse_reg(0),
-    --    O      => ten_gig_eth_tx_start
-    --  );
     ten_gig_eth_tx_start <= pulse_reg(0);
 
     dbg_ila_probe0(0) <= clk156;
@@ -1103,7 +1093,7 @@ BEGIN
     PORT MAP (
       RESET           => reset,
       CLK             => idata_adc_data_clk,
-      -- high 4-bit is offset, 2**(low 4-bit) is number of points to average    
+      -- high 4-bit is offset, 2**(low 4-bit) is number of points to average
       CONFIG          => config_reg(32*7+15 DOWNTO 32*7+8),
       TRIG            => idata_data_wr_start,
       INDATA_Q        => idata_data_fifo_din,
@@ -1242,5 +1232,5 @@ BEGIN
   --    );
   --END GENERATE led_obufs;
   --LED8Bit(5 DOWNTO 1) <= (OTHERS => '0');
-  
+
 END Behavioral;

@@ -25,7 +25,7 @@ port (
    pulsein     :in std_logic;           --! input pulse which is synchronized to in_clk
    inbusy      :out std_logic;          --! notify input side that output is not ready yet
    pulseout    :out std_logic           --! one out_clk wide output pulse, synchronized to out_clk
-   );
+ );
 end pulse2pulse;
 
 architecture syn of pulse2pulse is
@@ -40,15 +40,24 @@ architecture syn of pulse2pulse is
 -----------------------------------------------------------------------------------
 --signal declarations
 -----------------------------------------------------------------------------------
-signal out_set       :std_logic;
-signal out_set_prev  :std_logic;
-signal out_set_prev2 :std_logic;
-signal in_set        :std_logic;
-signal outreset      :std_logic;
-signal in_reset      :std_logic;
-signal in_reset_prev :std_logic;
-signal in_reset_prev2:std_logic;
+  ATTRIBUTE async_reg                   : string;
 
+  SIGNAL out_set                        : std_logic;
+  ATTRIBUTE async_reg OF out_set        : SIGNAL IS "true";
+  SIGNAL out_set_prev                   : std_logic;
+  ATTRIBUTE async_reg OF out_set_prev   : SIGNAL IS "true";
+  SIGNAL out_set_prev2                  : std_logic;
+  ATTRIBUTE async_reg OF out_set_prev2  : SIGNAL IS "true";
+  SIGNAL in_set                         : std_logic;
+  ATTRIBUTE async_reg OF in_set         : SIGNAL IS "true";
+  SIGNAL outreset                       : std_logic;
+  ATTRIBUTE async_reg OF outreset       : SIGNAL IS "true";
+  SIGNAL in_reset                       : std_logic;
+  ATTRIBUTE async_reg OF in_reset       : SIGNAL IS "true";
+  SIGNAL in_reset_prev                  : std_logic;
+  ATTRIBUTE async_reg OF in_reset_prev  : SIGNAL IS "true";
+  SIGNAL in_reset_prev2                 : std_logic;
+  ATTRIBUTE async_reg OF in_reset_prev2 : SIGNAL IS "true";
 
 -----------------------------------------------------------------------------------
 --component declarations

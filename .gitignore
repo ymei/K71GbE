@@ -31,3 +31,10 @@
 # Debug files
 *.dSYM/
 *.su
+
+# Python
+*.pyc
+
+# Firmware
+/ipcore_dir/*/*
+!/ipcore_dir/*/*.xci
